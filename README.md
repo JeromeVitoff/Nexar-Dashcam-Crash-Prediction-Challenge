@@ -35,4 +35,33 @@ nexar-collision-prediction/
 └── docs/              # Documentation
 
 
+
+##  Structure  Complète
+
+Nexar-Dashcam-Crash-Prediction-Challenge/
+│
+├── requirements.txt          ← À la racine
+├── .gitignore               ← À la racine
+├── README.md                ← À la racine
+├── setup.py                 ← À la racine (optionnel pour l'instant)
+│
+├── Data/                    ← Vos données (déjà existant)
+│   ├── train.csv
+│   ├── test.csv
+│   ├── sample_submission.csv
+│   ├── train/              # 1,500 vidéos
+│   └── test/               # 1,344 vidéos
+│
+├── notebooks/              ← À créer
+│   └── 01_EDA.ipynb       ← Le notebook qu'on va créer
+│
+├── src/                    ← À créer plus tard
+│   ├── __init__.py
+│   ├── data/
+│   ├── models/
+│   └── utils/
+│
+├── experiments/            ← À créer plus tard
+├── results/               ← À créer plus tard
+└── scripts/               ← À créer plus tard
     
