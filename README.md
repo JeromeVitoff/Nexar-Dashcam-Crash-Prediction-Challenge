@@ -1,7 +1,11 @@
 # Nexar-Dashcam-Crash-Prediction-Challenge
 # Projet Semestre 1 Master 2 MIASHS 
 
-Ce Challenge a été realisé dans le cadre du projet du premier semestre. 
+Ce répertoire est un challenge de kaggle dans le cadre de la réalisation de mon mémoire de mi-parcours M1
+
+# Lien du projet :
+https://www.kaggle.com/competitions/nexar-collision-prediction/overview
+
 
 # Structure de Projet
 
