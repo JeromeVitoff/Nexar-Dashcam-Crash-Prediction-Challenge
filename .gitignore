@@ -1,0 +1,239 @@
+
+# Never commit the actual dataset
+Data/
+data/raw/
+data/processed/
+*.mp4
+*.avi
+*.mov
+*.csv
+!sample_submission.csv
+!requirements.txt
+
+# Cached/preprocessed data
+*.npy
+*.npz
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+
+# ========================
+# MODEL CHECKPOINTS & WEIGHTS
+# ========================
+# Models can be very large
+*.pth
+*.pt
+*.ckpt
+*.weights
+*.pb
+*.onnx
+checkpoints/
+saved_models/
+weights/
+experiments/*/checkpoints/
+experiments/*/weights/
+
+# TensorFlow/Keras specific
+*.h5
+*.keras
+saved_model/
+
+# ========================
+# EXPERIMENT OUTPUTS
+# ========================
+# Keep config and results, but not heavy files
+experiments/*/logs/*.tfevents.*
+experiments/*/logs/*.pt
+runs/
+logs/
+outputs/
+results/*.png
+results/*.jpg
+results/*.mp4
+
+# Weights & Biases
+wandb/
+*.wandb
+
+# MLflow
+mlruns/
+
+# ========================
+# PYTHON
+# ========================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+.conda/
+conda-env/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# ========================
+# IDE & EDITORS
+# ========================
+# VSCode
+.vscode/
+*.code-workspace
+.history/
+
+# PyCharm
+.idea/
+*.iml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ========================
+# OS SPECIFIC
+# ========================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.Trash-*
+
+# ========================
+# TEMPORARY FILES
+# ========================
+*.tmp
+*.temp
+*.log
+*.bak
+*.swp
+*.swo
+tmp/
+temp/
+
+# ========================
+# JUPYTER OUTPUTS
+# ========================
+# Keep notebooks but not their outputs (optional)
+# Uncomment if you want to version notebooks without outputs
+# *.ipynb
+
+# ========================
+# COMPETITION SPECIFIC
+# ========================
+# Kaggle API credentials
+kaggle.json
+
+# Submission files (keep template, not actual submissions)
+submission_*.csv
+!sample_submission.csv
+
+# ========================
+# DOCUMENTATION
+# ========================
+# LaTeX temporary files (for your thesis)
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.out
+*.toc
+*.synctex.gz
+*.log
+*.pdf
+!thesis.pdf
+!report.pdf
+
+# ========================
+# SECRETS & CREDENTIALS
+# ========================
+.env
+.env.local
+secrets.yaml
+credentials.json
+*_credentials.json
+config_secret.yaml
+
+# ========================
+# CUSTOM RULES
+# ========================
+# Add your specific rules here
+# Example: ignore specific experiment results
+# experiments/exp_001/
+
+# Keep empty directories with .gitkeep
+!.gitkeep
