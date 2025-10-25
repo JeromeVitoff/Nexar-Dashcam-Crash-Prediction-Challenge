@@ -1,53 +1,38 @@
 # Nexar-Dashcam-Crash-Prediction-Challenge
 # Projet Semestre 1 Master 2 MIASHS 
 
-Ce Challenge a été realisé dans le cadre du projet du premier semestre. 
+# À Propos:
+Ce projet de recherche s'inscrit dans le cadre du Mémoire de Master 2 et vise à développer des modèles de deep learning capables de prédire les collisions automobiles avant qu'elles ne se produisent, en analysant des vidéos de dashcam en temps réel.
+
+# Objectif Principal : Développer un système d'alerte précoce pour les véhicules autonomes et les systèmes ADAS (Advanced Driver Assistance Systems) afin d'améliorer la sécurité routière.
+
+# Challenge Kaggle
+- Competition : Nexar Collision Prediction Challenge
+- Métrique d'évaluation : Mean Average Precision (mAP) à 500ms, 1000ms et 1500ms
+- Dataset : 1,500 vidéos d'entraînement + 1,344 vidéos de test (31 GB)
+
+
+# Lien du projet :
+
+https://www.kaggle.com/competitions/nexar-collision-prediction/overview
+
 
 # Structure de Projet
 
 nexar-collision-prediction/
-├── README.md
-├── requirements.txt
-├── setup.py
-├── config/
-│   ├── config.yaml          # Hyperparamètres centralisés
-│   └── experiments/         # Configs par expérience
-├── data/
-│   ├── raw/                 # train.csv, test.csv
-│   └── processed/           # Données prétraitées
-├── notebooks/
-│   ├── 01_EDA.ipynb        # Analyse exploratoire
-│   ├── 02_baseline.ipynb   # Modèle de base
-│   └── 03_experiments.ipynb
-├── src/
-│   ├── __init__.py
-│   ├── data/
-│   │   ├── dataset.py      # PyTorch Dataset
-│   │   ├── transforms.py   # Augmentations
-│   │   └── loader.py       # DataLoader
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── resnet_lstm.py
-│   │   ├── i3d.py
-│   │   ├── timesformer.py
-│   │   └── ensemble.py
-│   ├── training/
-│   │   ├── trainer.py
-│   │   └── metrics.py
-│   └── utils/
-│       ├── visualization.py
-│       └── helpers.py
-├── experiments/            # Résultats des expériences
-│   └── exp_001/
-│       ├── config.yaml
-│       ├── logs/
-│       ├── checkpoints/
-│       └── results.json
-└── scripts/
-    ├── train.py           # Script d'entraînement
-    ├── evaluate.py
-    └── submit.py
 
+├── config/              # Configurations YAML
+├── data/               # Données (gitignored)
+├── notebooks/          # Jupyter notebooks
+├── src/                # Code source
+│   ├── data/          # Dataset & DataLoader
+│   ├── models/        # Architectures
+│   ├── training/      # Trainer & Metrics
+│   └── utils/         # Utilitaires
+├── experiments/        # Résultats des expériences
+├── scripts/           # Scripts exécutables
+├── results/           # Résultats agrégés
+└── docs/              # Documentation
 
 
     
