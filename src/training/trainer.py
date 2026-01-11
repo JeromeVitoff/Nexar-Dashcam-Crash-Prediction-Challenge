@@ -12,6 +12,7 @@ Date: Octobre 2025
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from torch.cuda.amp import autocast, GradScaler
 from torch.optim import Adam, AdamW, SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
 import numpy as np
