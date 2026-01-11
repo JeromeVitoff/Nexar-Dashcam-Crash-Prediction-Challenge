@@ -1,0 +1,27 @@
+# Expérience 005: TimeSformer
+# =============================
+# 
+# Vision Transformer pré-entraîné sur Kinetics-400
+# Attention spatio-temporelle
+
+# Modèle
+model: timesformer
+
+# Données
+num_frames: 8  # Transformers peuvent fonctionner avec moins
+batch_size: 4  # Plus petit car modèle lourd
+sampling_strategy: uniform
+augmentation_level: basic
+
+# Entraînement
+epochs: 30  # Moins d'epochs car pré-entraîné
+lr: 5e-5  # LR plus faible pour fine-tuning
+optimizer: adamw
+weight_decay: 1e-2
+scheduler: cosine
+patience: 10
+
+# Notes
+description: "Transformer pré-entraîné - Fine-tuning"
+expected_performance: "85-90% accuracy"
+training_time: "Plus long (modèle lourd)"
