@@ -74,12 +74,17 @@ class Trainer:
         self.patience_counter = 0
         self.patience = config.get('patience', 10)
         
+        # Mixed Precision (seulement pour CUDA)
+        self.use_amp = device.type == 'cuda' and config.get('use_amp', True)
+        self.scaler = GradScaler() if self.use_amp else None
+        
         # Logging
         self.log_file = self.save_dir / 'training.log'
         self._init_log()
         
         print(f"✅ Trainer initialisé:")
         print(f"   • Device: {device}")
+        print(f"   • Mixed Precision: {'ON' if self.use_amp else 'OFF'}")
         print(f"   • Train batches: {len(train_loader)}")
         print(f"   • Val batches: {len(val_loader)}")
         print(f"   • Save dir: {save_dir}")
@@ -93,8 +98,8 @@ class Trainer:
                 self.optimizer,
                 mode='min',
                 factor=0.5,
-                patience=5
-                
+                patience=5,
+                verbose=True
             )
         elif scheduler_type == 'cosine':
             return CosineAnnealingLR(
@@ -136,14 +141,23 @@ class Trainer:
             frames = frames.to(self.device)
             labels = labels.to(self.device)
             
-            # Forward
             self.optimizer.zero_grad()
-            outputs = self.model(frames)
-            loss = self.criterion(outputs, labels)
             
-            # Backward
-            loss.backward()
-            self.optimizer.step()
+            # Mixed Precision Training
+            if self.use_amp:
+                with autocast():
+                    outputs = self.model(frames)
+                    loss = self.criterion(outputs, labels)
+                
+                self.scaler.scale(loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+            else:
+                # Standard training (CPU/MPS)
+                outputs = self.model(frames)
+                loss = self.criterion(outputs, labels)
+                loss.backward()
+                self.optimizer.step()
             
             # Métriques
             total_loss += loss.item()
