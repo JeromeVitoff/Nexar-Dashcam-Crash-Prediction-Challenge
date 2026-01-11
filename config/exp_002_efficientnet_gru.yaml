@@ -1,0 +1,26 @@
+# Expérience 002: EfficientNet-GRU
+# ==================================
+# 
+# Architecture plus légère et efficace
+# EfficientNet-B0 + GRU pour vitesse
+
+# Modèle
+model: efficientnet_gru
+
+# Données
+num_frames: 16
+batch_size: 16  # Plus grand car modèle plus léger
+sampling_strategy: uniform
+augmentation_level: basic
+
+# Entraînement
+epochs: 50
+lr: 1e-4
+optimizer: adam
+weight_decay: 1e-4
+scheduler: reduce_on_plateau
+patience: 10
+
+# Notes
+description: "Architecture légère et rapide"
+expected_performance: "78-82% accuracy"

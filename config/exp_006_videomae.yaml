@@ -1,0 +1,27 @@
+# Expérience 006: VideoMAE
+# ==========================
+# 
+# Masked Autoencoder pré-entraîné sur Kinetics-400
+# Apprentissage auto-supervisé
+
+# Modèle
+model: videomae
+
+# Données
+num_frames: 16  # OBLIGATOIRE pour VideoMAE
+batch_size: 4
+sampling_strategy: uniform
+augmentation_level: basic
+
+# Entraînement
+epochs: 30
+lr: 5e-5
+optimizer: adamw
+weight_decay: 1e-2
+scheduler: cosine
+patience: 10
+
+# Notes
+description: "VideoMAE avec Masked Autoencoding"
+expected_performance: "85-90% accuracy"
+constraint: "DOIT utiliser exactement 16 frames"

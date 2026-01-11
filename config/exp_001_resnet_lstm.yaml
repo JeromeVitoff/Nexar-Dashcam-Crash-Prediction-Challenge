@@ -1,0 +1,26 @@
+# Expérience 001: ResNet-LSTM Baseline
+# =====================================
+# 
+# Modèle baseline classique pour classification vidéo
+# CNN pré-entraîné + RNN pour modélisation temporelle
+
+# Modèle
+model: resnet_lstm
+
+# Données
+num_frames: 16
+batch_size: 8
+sampling_strategy: uniform
+augmentation_level: basic
+
+# Entraînement
+epochs: 50
+lr: 1e-4
+optimizer: adam
+weight_decay: 1e-4
+scheduler: reduce_on_plateau
+patience: 10
+
+# Notes
+description: "Baseline ResNet50-LSTM avec 16 frames uniformes"
+expected_performance: "75-80% accuracy"
