@@ -55,7 +55,7 @@ class ViViTClassifier(nn.Module):
         self._is_backbone_frozen = freeze_backbone
         
         # Charger le modèle pré-entraîné
-        print(f"   📥 Chargement de {pretrained_model}...")
+        print(f"   Chargement de {pretrained_model}...")
         self.vivit = VivitModel.from_pretrained(pretrained_model)
         
         # Dimension des features
@@ -65,9 +65,9 @@ class ViViTClassifier(nn.Module):
         if freeze_backbone:
             for param in self.vivit.parameters():
                 param.requires_grad = False
-            print("   🔒 Backbone freezé")
+            print("    Backbone freezé")
         else:
-            print("   🔓 Backbone entraînable")
+            print("    Backbone entraînable")
         
         # Classifier custom
         self.classifier = nn.Sequential(
@@ -79,12 +79,12 @@ class ViViTClassifier(nn.Module):
             nn.Linear(self.hidden_size // 2, num_classes)
         )
         
-        print(f"✅ ViViT initialisé:")
+        print(f" ViViT initialisé:")
         print(f"   • Model: {pretrained_model}")
         print(f"   • Hidden size: {self.hidden_size}")
         print(f"   • Dropout: {dropout}")
         print(f"   • Num classes: {num_classes}")
-        print(f"   ⚠️  NÉCESSITE EXACTEMENT 32 FRAMES")
+        print(f"     NÉCESSITE EXACTEMENT 32 FRAMES")
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -119,13 +119,13 @@ class ViViTClassifier(nn.Module):
         for param in self.vivit.parameters():
             param.requires_grad = False
         self._is_backbone_frozen = True
-        print("🔒 Backbone freezé")
+        print(" Backbone freezé")
     
     def unfreeze_backbone(self):
         for param in self.vivit.parameters():
             param.requires_grad = True
         self._is_backbone_frozen = False
-        print("🔓 Backbone unfreezé")
+        print(" Backbone unfreezé")
     
     def unfreeze_last_n_layers(self, n: int = 2):
         """Unfreeze les n dernières couches du transformer."""
@@ -140,7 +140,7 @@ class ViViTClassifier(nn.Module):
             for param in self.vivit.encoder.layer[i].parameters():
                 param.requires_grad = True
         
-        print(f"🔓 Dernières {n} couches unfreezées")
+        print(f" Dernières {n} couches unfreezées")
 
 
 def count_parameters(model: nn.Module) -> Dict[str, int]:
@@ -158,7 +158,7 @@ def count_parameters(model: nn.Module) -> Dict[str, int]:
 
 def test_model():
     """Test du modèle ViViT."""
-    print("🧪 TEST DU MODÈLE ViViT\n")
+    print(" TEST DU MODÈLE ViViT\n")
     print("="*70)
     
     # 1. Créer le modèle
@@ -228,11 +228,11 @@ def test_model():
     print(f"   • Unfreeze 2 layers: {p_partial:,}")
     
     print("\n" + "="*70)
-    print("✅ TOUS LES TESTS RÉUSSIS!")
+    print("TOUS LES TESTS RÉUSSIS!")
     print("="*70)
     
     # Résumé
-    print("\n📊 RÉSUMÉ:")
+    print("\n RÉSUMÉ:")
     print("-" * 70)
     print(f"Architecture: ViViT (Vision Video Transformer)")
     print(f"Paramètres: {params['total']:,}")
