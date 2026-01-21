@@ -1,13 +1,19 @@
-
-# Never commit the actual dataset
+# ========================
+# DATASET - NEVER COMMIT
+# ========================
 Data/
 data/raw/
 data/processed/
 *.mp4
 *.avi
 *.mov
+*.mkv
+*.webm
+*.flv
 *.csv
 !sample_submission.csv
+!train.csv
+!test.csv
 !requirements.txt
 
 # Cached/preprocessed data
@@ -28,6 +34,7 @@ data/processed/
 *.weights
 *.pb
 *.onnx
+*.safetensors
 checkpoints/
 saved_models/
 weights/
@@ -51,6 +58,12 @@ outputs/
 results/*.png
 results/*.jpg
 results/*.mp4
+
+# Keep analysis plots (figures for thesis)
+!figures/*.pdf
+!figures/*.png
+!analysis/*.pdf
+!analysis/*.png
 
 # Weights & Biases
 wandb/
@@ -76,6 +89,7 @@ ENV/
 .venv
 .conda/
 conda-env/
+poetry.lock
 
 # Jupyter Notebook
 .ipynb_checkpoints/
@@ -101,6 +115,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # PyInstaller
 *.manifest
@@ -118,6 +133,17 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
 # ========================
 # IDE & EDITORS
 # ========================
@@ -129,6 +155,8 @@ coverage.xml
 # PyCharm
 .idea/
 *.iml
+*.ipr
+*.iws
 
 # Sublime Text
 *.sublime-project
@@ -138,11 +166,16 @@ coverage.xml
 *.swp
 *.swo
 *~
+.vim/
 
 # Emacs
 *~
 \#*\#
 .\#*
+
+# Spyder
+.spyderproject
+.spyproject
 
 # ========================
 # OS SPECIFIC
@@ -159,16 +192,21 @@ coverage.xml
 .Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
+.apdisk
 
 # Windows
 Thumbs.db
+Thumbs.db:encryptable
 ehthumbs.db
+ehthumbs_vista.db
 Desktop.ini
 $RECYCLE.BIN/
+*.lnk
 
 # Linux
 .directory
 .Trash-*
+.nfs*
 
 # ========================
 # TEMPORARY FILES
@@ -183,26 +221,36 @@ tmp/
 temp/
 
 # ========================
-# JUPYTER OUTPUTS
+# JUPYTER NOTEBOOKS
 # ========================
-# Keep notebooks but not their outputs (optional)
-# Uncomment if you want to version notebooks without outputs
+# Ignore output but keep notebooks
+# Uncomment next line if you want to strip outputs before commit
 # *.ipynb
 
-# ========================
-# COMPETITION SPECIFIC
-# ========================
-# Kaggle API credentials
-kaggle.json
-
-# Submission files (keep template, not actual submissions)
-submission_*.csv
-!sample_submission.csv
+# Jupyter Notebook metadata
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
 
 # ========================
-# DOCUMENTATION
+# GOOGLE COLAB / DRIVE
 # ========================
-# LaTeX temporary files (for your thesis)
+# Colab temporary files
+/content/
+colab_env/
+
+# Google Drive sync conflicts
+*conflicted copy*.ipynb
+*conflicted copy*.py
+*conflicted copy*.tex
+
+# Drive Desktop app files
+.tmp.drivedownload/
+.tmp.driveupload/
+
+# ========================
+# LATEX / MEMOIR
+# ========================
+# LaTeX auxiliary files
 *.aux
 *.bbl
 *.blg
@@ -213,27 +261,199 @@ submission_*.csv
 *.out
 *.toc
 *.synctex.gz
+*.synctex(busy)
 *.log
+*.nav
+*.snm
+*.vrb
+*.xdv
+*.bcf
+*.run.xml
+*.gz(busy)
+
+# LaTeX temporary directories
+_minted-*/
+auto/
+
+# BibTeX
+*.bib.bak
+*.bib.sav
+
+# Biber
+*-blx.bib
+
+# TeXShop
+*.synctex.gz(busy)
+
+# LyX
+*.lyx~
+
+# Kile
+*.kilepr
+
+# Latexmk
+*.fdb_latexmk
+
+# TeXworks
+*.synctex.gz
+
+# TeXnicCenter
+*.tcp
+*.tps
+
+# Makeindex
+*.idx
+*.ilg
+*.ind
+
+# Nomenclature
+*.nlo
+*.nls
+
+# Glossaries
+*.acn
+*.acr
+*.glg
+*.glo
+*.gls
+*.glsdefs
+*.lzo
+*.lzs
+
+# Gnuplot
+*.gnuplot
+*.table
+
+# Asymptote
+*.asy
+
+# AMSTeX
+*.lox
+
+# Minitoc
+*.maf
+*.mlf
+*.mlt
+*.mtc[0-9]*
+*.slf[0-9]*
+*.slt[0-9]*
+*.stc[0-9]*
+
+# ========================
+# LATEX OUTPUT - Keep final PDFs only
+# ========================
+# Ignore all PDFs except the final thesis
 *.pdf
+!manuscript.pdf
+!memoire.pdf
 !thesis.pdf
 !report.pdf
+!slides.pdf
+
+# But allow figures PDFs (for thesis)
+!figures/*.pdf
+!figures/**/*.pdf
+
+# ========================
+# COMPETITION SPECIFIC (KAGGLE)
+# ========================
+# Kaggle API credentials
+kaggle.json
+.kaggle/
+
+# Submission files (keep template, not actual submissions)
+submission_*.csv
+!sample_submission.csv
+
+# Kaggle notebooks downloads
+kaggle_notebooks/
+
+# ========================
+# DOCUMENTATION
+# ========================
+# Sphinx documentation
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# Doxygen
+html/
+latex/
+
+# MkDocs
+site/
 
 # ========================
 # SECRETS & CREDENTIALS
 # ========================
 .env
 .env.local
+.env.*.local
 secrets.yaml
 credentials.json
 *_credentials.json
 config_secret.yaml
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# API keys
+*apikey*
+*api_key*
+*secret*
+!*secret*.example
 
 # ========================
-# CUSTOM RULES
+# GIT SPECIFIC
 # ========================
-# Add your specific rules here
-# Example: ignore specific experiment results
-# experiments/exp_001/
+# Git merge files
+*.orig
+*.BACKUP.*
+*.BASE.*
+*.LOCAL.*
+*.REMOTE.*
+*_BACKUP_*.txt
+*_BASE_*.txt
+*_LOCAL_*.txt
+*_REMOTE_*.txt
 
-# Keep empty directories with .gitkeep
-!.gitkeep
+# ========================
+# LARGE FILES (Git LFS hint)
+# ========================
+# Files over 100MB should use Git LFS
+# Uncomment and configure if needed:
+# *.tar.gz
+# *.zip
+# *.7z
+
+# ========================
+# PROJECT SPECIFIC
+# ========================
+# Your specific ignores here
+
+# Colab mounted drive (if accidentally in project)
+/drive/
+
+# Analysis notebooks outputs
+analysis/output/
+analysis/plots/
+!analysis/plots/.gitkeep
+
+# Keep structure with .gitkeep
+!**/.gitkeep
+
+# ========================
+# CUSTOM EXCEPTIONS
+# ========================
+# Always include these important files
+!README.md
+!LICENSE
+!CITATION.cff
+!requirements.txt
+!environment.yml
+!setup.py
+!Makefile
+!.gitignore
+!.gitattributes
