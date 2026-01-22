@@ -1,0 +1,472 @@
+\chapter{Méthodologie Expérimentale}
+%\minitoc
+
+\section{Introduction}
+
+Ce chapitre présente le protocole expérimental mis en œuvre pour comparer les six architectures sélectionnées. Nous détaillons successivement le dataset utilisé, les métriques d'évaluation, le protocole d'entraînement, et la configuration spécifique de chaque modèle.
+
+\section{Dataset : Nexar Collision Prediction Challenge}
+
+\subsection{Description Générale}
+
+Le dataset Nexar \cite{nexar2025dashcamcollisionprediction} a été spécifiquement conçu pour la prédiction de collisions à partir de vidéos dashcam. Il présente plusieurs caractéristiques qui en font un benchmark de référence pour cette tâche :
+
+\begin{itemize}
+    \item \textbf{Qualité professionnelle} : Vidéos capturées par des dashcams Nexar en conditions réelles
+    \item \textbf{Annotations expertes} : Chaque vidéo est annotée manuellement avec timestamps précis
+    \item \textbf{Diversité des scénarios} : Variété de conditions météorologiques, d'éclairage et de situations routières
+    \item \textbf{Dataset équilibré} : Même nombre de cas positifs et négatifs
+\end{itemize}
+
+
+\subsection{Composition du Dataset}
+
+Le dataset est composé de deux sous-ensembles :
+
+\textbf{Ensemble d'entraînement} : 1,500 vidéos réparties comme suit :
+\begin{itemize}
+    \item 750 vidéos négatives (conduite normale)
+    \item 750 vidéos positives :
+    \begin{itemize}
+        \item 400 collisions réelles
+        \item 350 near-miss (quasi-accidents)
+    \end{itemize}
+\end{itemize}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{StatDesc.png}
+\caption{Aperçu des dimensions du dataset}
+\label{fig:dim_datasets}
+\end{figure}
+\textbf{Ensemble de test} : 1,344 vidéos dont la répartition positive/négative est gardée privée.
+
+\subsection{Statistiques des vidéos train et test}
+
+Le tableau~\ref{tab:stats_videos} présente les statistiques descriptives des vidéos utilisées pour l'entraînement et le test. 
+Les vidéos du jeu d'entraînement sont 3.8 fois plus longues que celles du test set, tandis que la résolution et la fréquence d’images restent homogènes entre les deux ensembles. Ceci est normal : les vidéos de test sont tronquées avant l'événement (500ms, 1000ms ou 1500ms)
+
+\begin{table}[h!]
+\centering
+\caption{Statistiques descriptives des vidéos du jeu d'entraînement et de test}
+\label{tab:stats_videos}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Caractéristique} & \textbf{Training Set} & \textbf{Test Set} \\
+\midrule
+Durée moyenne (s)        & 37.63 & 9.89 \\
+Durée minimale (s)      & 18.00 & 8.10 \\
+Durée maximale (s)      & 45.27 & 10.90 \\
+\midrule
+Largeur (pixels)        & 1280  & 1280 \\
+Hauteur (pixels)        & 720   & 720 \\
+\midrule
+FPS moyen               & 30.16 & 30.12 \\
+\midrule
+Nombre moyen de frames  & 1135  & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Analyse temporelle Accident (Time-to-Accident)}
+\begin{flushleft}
+Nombre d'échantillons positifs: 750.
+Statistiques du Time-to-Accident:
+\begin{itemize}
+\item Moyenne: 1.60 secondes
+\item Médiane: 1.43 secondes
+\item Min: 0.03 secondes
+\item 4.47 secondes
+\item Écart-type: 0.87 secondes
+\end{itemize}
+\end{flushleft}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{Time_acci.png}
+\caption{Aperçu de l'analyse temporelle (Time-to-Accident)}
+\label{fig:Time_to_Accident}
+\end{figure}
+
+\subsection{Caractéristiques Techniques}
+
+\begin{table}[H]
+\centering
+\caption{Caractéristiques techniques du dataset Nexar}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Propriété} & \textbf{Train} & \textbf{Test} \\
+\midrule
+Nombre de vidéos & 1,500 & 1,344 \\
+Durée moyenne & $\sim$40 secondes & $\sim$10 secondes \\
+Résolution & 1280×720 pixels & 1280×720 pixels \\
+FPS & 30 images/seconde & 30 images/seconde \\
+Taille totale & $\sim$20 GB & $\sim$11 GB \\
+Format & MP4 (H.264) & MP4 (H.264) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Annotations}
+
+Pour chaque vidéo positive du training set, trois informations temporelles sont fournies :
+
+\begin{itemize}
+    \item \texttt{time\_of\_event} : Instant où la collision ou le near-miss se produit (en secondes)
+    \item \texttt{time\_of\_alert} : Instant où le système devrait déclencher une alerte (en secondes)
+    \item \texttt{target} : Label binaire (0 = négatif, 1 = positif)
+\end{itemize}
+
+Le \textbf{Time-to-Accident (TTA)} est défini comme : $\text{TTA} = \text{time\_of\_event} - \text{time\_of\_alert}$
+\begin{flushleft}
+Les vidéos de test sont tronquées à 500ms, 1000ms ou 1500ms avant l'événement, correspondant aux trois horizons temporels d'évaluation.
+\end{flushleft}
+
+\vspace{1cm}
+
+\subsection{Quelques exemples de vidéos}
+\begin{enumerate}
+\item Conduite normaleE (Classe 0)
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{ConduiteN.png}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{ConduiteNN.png}
+\caption{Exemple de vidéos conduite normale (Classe 0))}
+\label{fig:Conduite_Normale}
+\end{figure}
+
+\item Collision/Near-Miss (Classe 1)
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{Collision1.png}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{Collision2.png}
+\caption{Exemple de vidéos Collision/Near-Miss (Classe 1))}
+\label{fig:Collision}
+\end{figure}
+\end{enumerate}
+
+
+\subsection{Prétraitement des Données}
+
+Plusieurs étapes de prétraitement sont appliquées :
+
+\begin{enumerate}
+    \item \textbf{Échantillonnage temporel} : Extraction de $N$ frames uniformément espacées ($N \in \{8, 16, 32\}$ selon le modèle)
+    \item \textbf{Redimensionnement spatial} : Resize à $224 \times 224$ (modèles 2D+RNN) ou $160 \times 160$ (modèles 3D/Transformers) pour réduire les coûts computationnels
+    \item \textbf{Normalisation} : Normalisation des pixels selon les statistiques ImageNet : 
+    $$\mathbf{x}_{\text{norm}} = \frac{\mathbf{x} - \boldsymbol{\mu}}{\boldsymbol{\sigma}}$$
+    où $\boldsymbol{\mu} = [0.485, 0.456, 0.406]$ et $\boldsymbol{\sigma} = [0.229, 0.224, 0.225]$
+\end{enumerate}
+
+\subsection{Augmentation de Données}
+
+Pour améliorer la généralisation, nous appliquons les augmentations suivantes durant l'entraînement :
+
+\begin{itemize}
+    \item Flip horizontal aléatoire (probabilité 0.5)
+    \item Ajustement de luminosité ($\pm$ 20\%)
+    \item Ajustement de contraste ($\pm$ 20\%)
+    \item Ajustement de saturation ($\pm$ 20\%)
+\end{itemize}
+
+Les augmentations sont appliquées de manière cohérente sur toutes les frames d'une même vidéo.
+
+\section{Métriques d'Évaluation}
+
+\subsection{Accuracy}
+
+L'accuracy mesure la proportion de prédictions correctes :
+
+$$\text{Accuracy} = \frac{\text{TP} + \text{TN}}{\text{TP} + \text{TN} + \text{FP} + \text{FN}}$$
+
+où TP (True Positives), TN (True Negatives), FP (False Positives), FN (False Negatives).
+
+\subsection{Precision, Recall et F1-Score}
+
+\begin{align}
+\text{Precision} &= \frac{\text{TP}}{\text{TP} + \text{FP}} \\
+\text{Recall} &= \frac{\text{TP}}{\text{TP} + \text{FN}} \\
+\text{F1-Score} &= 2 \cdot \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
+\end{align}
+
+\subsection{Average Precision (AP)}
+
+L'Average Precision résume la courbe Precision-Recall en calculant l'aire sous la courbe :
+
+$$\text{AP} = \sum_{n} (\text{Recall}_n - \text{Recall}_{n-1}) \times \text{Precision}_n$$
+
+Cette métrique est particulièrement adaptée aux problèmes de ranking, ce qui est le cas pour la prédiction de collisions (on souhaite que les cas positifs aient des scores plus élevés).
+
+\subsection{Mean Average Precision (mAP) - Métrique Kaggle}
+
+Le challenge Kaggle évalue les soumissions selon le Mean Average Precision calculé sur trois horizons temporels :
+
+$$\text{mAP} = \frac{1}{3} \left( \text{AP}_{500\text{ms}} + \text{AP}_{1000\text{ms}} + \text{AP}_{1500\text{ms}} \right)$$
+
+Chaque $\text{AP}_{\text{TTA}}$ est calculé uniquement sur les vidéos de test tronquées au time-to-accident correspondant. Cette métrique évalue simultanément :
+\begin{itemize}
+    \item La \textbf{capacité discriminative} du modèle (distinguer positif/négatif)
+    \item La \textbf{capacité d'anticipation} (prédire suffisamment tôt)
+\end{itemize}
+
+\section{Protocole d'Entraînement}
+
+\subsection{Division Train/Validation}
+
+L'ensemble d'entraînement (1,500 vidéos) est divisé en :
+\begin{itemize}
+    \item \textbf{Train set} : 1,200 vidéos (80\%)
+    \item \textbf{Validation set} : 300 vidéos (20\%)
+\end{itemize}
+
+La division est stratifiée pour maintenir l'équilibre positif/négatif dans chaque sous-ensemble.
+
+\subsection{Hyperparamètres Généraux}
+
+Les hyperparamètres suivants sont utilisés pour tous les modèles (sauf mention contraire) :
+
+\begin{table}[h]
+\centering
+\caption{Hyperparamètres d'entraînement communs}
+\begin{tabular}{lc}
+\toprule
+\textbf{Hyperparamètre} & \textbf{Valeur} \\
+\midrule
+Fonction de perte & Binary Cross-Entropy \\
+Optimiseur & Adam \cite{kingma2015} \\
+Learning rate initial & $1 \times 10^{-4}$ \\
+Weight decay (L2) & $1 \times 10^{-4}$ \\
+Learning rate scheduler & ReduceLROnPlateau \\
+Patience (scheduler) & 5 epochs \\
+Factor (scheduler) & 0.5 \\
+Nombre d'epochs max & 30 \\
+Early stopping patience & 10 epochs \\
+Batch size & Variable selon modèle \\
+Mixed Precision Training & Activé (FP16) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Early Stopping}
+
+Pour éviter l'overfitting, nous implémentons un early stopping basé sur l'Average Precision de validation :
+\begin{itemize}
+    \item Sauvegarde du meilleur modèle selon le AP de validation
+    \item Arrêt si pas d'amélioration pendant 10 epochs consécutifs
+    \item Restauration des poids du meilleur epoch pour l'évaluation finale
+\end{itemize}
+
+\subsection{Infrastructure Computationnelle}
+
+\textbf{Environnement d'entraînement} :
+\begin{itemize}
+    \item Plateforme : Google Colab Pro+
+    \item GPU : NVIDIA  NVIDIA A100 (40Go de mémoire GPU)
+    \item RAM : 25 GO
+    \item Stockage : Google Drive (31 GB dataset)
+\end{itemize}
+
+\textbf{Framework et librairies} :
+\begin{itemize}
+    \item PyTorch 2.0+
+    \item torchvision 0.15+
+    \item OpenCV 4.8+
+    \item timm (PyTorch Image Models)
+    \item transformers (Hugging Face)
+\end{itemize}
+
+\section{Configuration Spécifique des Modèles}
+
+\subsection{ResNet-LSTM}
+
+\textbf{Architecture} :
+\begin{itemize}
+    \item Backbone : ResNet-50 pré-entraîné ImageNet
+    \item Features : 2048 dimensions (sortie avgpool)
+    \item LSTM : 512 hidden units, 3 couches, dropout 0.3
+    \item Classifieur : Linear(512 $\rightarrow$ 1) + Sigmoid
+\end{itemize}
+
+\textbf{Entraînement} :
+\begin{itemize}
+    \item Stratégie : Pré-extraction de features (backbone frozen)
+    \item Nombre de frames : 16
+    \item Batch size : 32
+    \item Temps d'entraînement : $\sim$3 heures
+\end{itemize}
+
+\subsection{EfficientNet-GRU}
+
+\textbf{Architecture} :
+\begin{itemize}
+    \item Backbone : EfficientNet-B0 pré-entraîné ImageNet
+    \item Features : 1280 dimensions
+    \item GRU : Bidirectionnel, 512 hidden units, 3 couches, dropout 0.5
+    \item Classifieur : Linear(1024 $\rightarrow$ 1) + Sigmoid (bidirectionnel $\rightarrow$ 2×512)
+\end{itemize}
+
+\textbf{Entraînement} :
+\begin{itemize}
+    \item Stratégie : Pré-extraction de features
+    \item Nombre de frames : 16
+    \item Batch size : 32
+    \item Temps d'entraînement : $\sim$3 heures
+\end{itemize}
+
+\subsection{I3D (R3D-18)}
+
+\textbf{Architecture} :
+\begin{itemize}
+    \item Backbone : R3D-18 (proxy pour I3D) pré-entraîné Kinetics-400
+    \item Convolutions : 3D natives (kernel 3×3×3)
+    \item Paramètres : 33.3 millions
+    \item Classifieur : FC(512 $\rightarrow$ 256) + Dropout(0.5) + FC(256 $\rightarrow$ 1)
+\end{itemize}
+
+\textbf{Entraînement} :
+\begin{itemize}
+    \item Stratégie : Fine-tuning end-to-end
+    \item Nombre de frames : 8
+    \item Résolution : 160×160
+    \item Batch size : 16
+    \item Temps d'entraînement : $\sim$6 heures (23 epochs, early stop)
+\end{itemize}
+
+\subsection{R(2+1)D}
+
+\textbf{Architecture} :
+\begin{itemize}
+    \item Architecture : R(2+1)D-18 pré-entraîné Kinetics
+    \item Convolutions : Factorisées (2D spatial + 1D temporal)
+    \item Paramètres : $\sim$32 millions
+    \item Classifieur : FC(512 $\rightarrow$ 1)
+\end{itemize}
+
+\textbf{Entraînement} :
+\begin{itemize}
+    \item Stratégie : Fine-tuning end-to-end
+    \item Nombre de frames : 8
+    \item Résolution : 160×160
+    \item Batch size : 16
+    \item Temps d'entraînement : $\sim$5 heures
+\end{itemize}
+
+\subsection{TimeSformer}
+
+\textbf{Architecture} :
+\begin{itemize}
+    \item Architecture : TimeSformer-base
+    \item Attention : Divided space-time
+    \item Pré-entraînement : \textbf{Aucun} (entraînement from scratch)
+    \item Patch size : 16×16
+    \item Paramètres : $\sim$120 millions
+\end{itemize}
+
+\textbf{Entraînement} :
+\begin{itemize}
+    \item Nombre de frames : 8
+    \item Résolution : 224×224
+    \item Batch size : 8 (limité par mémoire)
+    \item Temps d'entraînement : $\sim$8 heures
+\end{itemize}
+
+\subsection{VideoMAE}
+
+\textbf{Architecture} :
+\begin{itemize}
+    \item Architecture : ViT-Base adapté vidéo
+    \item Pré-entraînement : Kinetics-400 (Masked Autoencoding)
+    \item Patch size : 16×16
+    \item Paramètres : $\sim$86 millions
+\end{itemize}
+
+\textbf{Entraînement} :
+\begin{itemize}
+    \item Stratégie : Fine-tuning
+    \item Nombre de frames : 16
+    \item Résolution : 224×224
+    \item Batch size : 8
+    \item Temps d'entraînement : $\sim$7 heures (19 epochs, early stop)
+\end{itemize}
+
+\section{Stratégies d'Optimisation}
+
+\subsection{Mixed Precision Training}
+
+Pour accélérer l'entraînement et réduire l'utilisation mémoire, nous utilisons le \textbf{mixed precision training} (FP16) via PyTorch AMP :
+\vspace{1cm}
+
+\begin{lstlisting}[language=Python]
+from torch.cuda.amp import autocast, GradScaler
+
+scaler = GradScaler()
+
+for batch in dataloader:
+    with autocast():
+        outputs = model(inputs)
+        loss = criterion(outputs, targets)
+    
+    scaler.scale(loss).backward()
+    scaler.step(optimizer)
+    scaler.update()
+\end{lstlisting}
+
+Cette approche permet un gain de vitesse de $\sim$2× sans perte de précision.
+
+\subsection{Pré-extraction de Features (CNN-RNN)}
+
+Pour les modèles hybrides, nous adoptons une stratégie en deux phases :
+
+\begin{enumerate}
+    \item \textbf{Phase 1 - Extraction} : Le backbone CNN traite toutes les vidéos une seule fois et sauvegarde les features ($\sim$2 heures)
+    \item \textbf{Phase 2 - Entraînement RNN} : Entraînement rapide du RNN sur les features pré-extraites ($\sim$1 heure)
+\end{enumerate}
+
+Cette approche réduit le temps total de $\sim$10 heures à $\sim$3 heures par modèle (gain ×3).
+
+\subsection{Gestion de la Mémoire GPU}
+
+Plusieurs techniques sont employées pour optimiser l'utilisation GPU :
+
+\begin{itemize}
+    \item \textbf{Gradient accumulation} : Simulation de batch sizes plus grands sur GPU limité
+    \item \textbf{Réduction de résolution} : 160×160 au lieu de 224×224 pour modèles 3D/Transformers
+    \item \textbf{Gradient checkpointing} : Compromis temps-mémoire pour modèles très profonds
+\end{itemize}
+
+\section{Reproductibilité}
+
+Pour assurer la reproductibilité des expériences :
+
+\begin{itemize}
+	\item L'ensemble du code source de ce projet est disponible en libre accès sur 
+GitHub\footnote{\url{https://github.com/JeromeVitoff/Nexar-Dashcam-Crash-Prediction-Challenge}} \cite{github_reference}
+    \item \textbf{Seeds aléatoires fixées} : PyTorch, NumPy, Python random
+    \item \textbf{Déterminisme CUDA} : \texttt{torch.backends.cudnn.deterministic = True}
+    \item \textbf{Versioning} : Toutes les versions de librairies documentées
+    \item \textbf{Code source} : Scripts d'entraînement sauvegardés avec checkpoints
+    \item \textbf{Logs détaillés} : Métriques epoch par epoch, hyperparamètres, temps d'exécution
+\end{itemize}
+
+\section{Synthèse}
+
+Ce chapitre a décrit le protocole expérimental rigoureux mis en place pour évaluer et comparer les six architectures. Les points clés sont :
+
+\begin{itemize}
+    \item Utilisation du dataset Nexar (1,500 train, 1,344 test) avec annotations précises
+    \item Métriques multiples (Accuracy, Precision, Recall, AP, mAP Kaggle)
+    \item Protocole d'entraînement standardisé avec early stopping et validation
+    \item Configurations optimisées pour chaque famille d'architecture
+    \item Stratégies d'optimisation (mixed precision, pré-extraction features)
+    \item Mesures de reproductibilité rigoureuses
+\end{itemize}
+
+Le chapitre suivant présentera les détails d'implémentation technique et les adaptations spécifiques effectuées pour chaque modèle.

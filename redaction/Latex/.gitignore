@@ -1,0 +1,32 @@
+# Fichiers LaTeX temporaires
+*.aux
+*.log
+*.toc
+*.lof
+*.lot
+*.out
+*.bbl
+*.blg
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.mtc*
+*.maf
+*.mlf*
+*.mlt*
+
+# Fichiers de sauvegarde
+*~
+*.backup
+*.bak
+
+# Fichiers OS
+.DS_Store
+Thumbs.db
+
+# Dossiers de build
+build/
+output/
+
+# PDF final (décommenter si vous ne voulez pas versionner le PDF)
+# manuscript.pdf

@@ -1,0 +1,160 @@
+\documentclass[12pt,french]{report}
+
+%------------------------------------------------
+% Encodage et langue
+%------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+%------------------------------------------------
+% Mise en page
+%------------------------------------------------
+\usepackage[a4paper,width=160mm,top=25mm,bottom=25mm]{geometry}
+\linespread{1.2}
+\usepackage{setspace}
+
+%------------------------------------------------
+% Mathématiques et symboles
+%------------------------------------------------
+\usepackage{amsmath,amssymb,amsfonts,amsthm,mathtools,bbm}
+
+\newtheorem{theorem}{Théorème}
+\newtheorem{lemma}{Lemme}
+
+%------------------------------------------------
+% Graphiques et figures
+%------------------------------------------------
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{caption}
+\usepackage{subcaption}
+
+%------------------------------------------------
+% Tableaux
+%------------------------------------------------
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{multirow}
+
+%------------------------------------------------
+% TikZ
+%------------------------------------------------
+\usepackage{tikz}
+\usetikzlibrary{arrows,positioning,shapes,calc}
+
+%------------------------------------------------
+% Algorithmes
+%------------------------------------------------
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+%------------------------------------------------
+% Code source
+%------------------------------------------------
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    commentstyle=\color{gray},
+    keywordstyle=\color{blue},
+    stringstyle=\color{red}
+}
+
+%------------------------------------------------
+% Bibliographie (BibLaTeX + Biber)
+%------------------------------------------------
+\usepackage[
+  backend=biber,
+  style=authoryear,
+  natbib=true,
+  labelnumber=true
+]{biblatex}
+
+\addbibresource{references.bib}
+% Personnaliser l'affichage de la bibliographie avec numéros
+\defbibenvironment{bibliography}
+  {\enumerate{}
+   {\setlength{\leftmargin}{\bibhang}%
+    \setlength{\itemindent}{-\leftmargin}%
+    \setlength{\itemsep}{\bibitemsep}%
+    \setlength{\parsep}{\bibparsep}}}
+  {\endenumerate}
+  {\item}
+  
+%------------------------------------------------
+% Hyperliens (TOUJOURS en dernier)
+%------------------------------------------------
+\usepackage[
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=blue,
+  urlcolor=blue
+]{hyperref}
+
+%------------------------------------------------
+% Mini-tables des matières
+%------------------------------------------------
+\usepackage{minitoc}
+
+%------------------------------------------------
+% Métadonnées
+%------------------------------------------------
+\title{\Huge{Analyse Comparative d'Architectures Deep Learning pour la Prédiction de Collisions Routières par Vision par Ordinateur}}
+\author{VITOFFODJI Adjimon}
+\date{Janvier 2026}
+
+\def\mytitle{Analyse Comparative d'Architectures Deep Learning pour la Prédiction de Collisions Routières}
+\def\myname{VITOFFODJI Adjimon}
+\def\degree{Master 2}
+\def\mydegree{Mathématiques et Informatiques Appliqués aux Sciences Humaines et Sociales}
+\def\mysupervisor{Jérôme PASQUET}
+\def\myuniversity{Université Paul Valéry Montpellier 3}
+\def\myyear{2025--2026}
+
+\begin{document}
+
+%Front Matter
+\dominitoc
+\pagenumbering{roman}
+\setcounter{minitocdepth}{2}
+\input{front_page}
+
+\addstarredchapter{Remerciements}
+\input{chapters/remerciements}
+
+\addstarredchapter{Résumé}
+\input{chapters/resume}
+
+\tableofcontents
+\addstarredchapter{Liste des figures}
+\listoffigures
+\addstarredchapter{Liste des tableaux}
+\listoftables
+
+%Chapters
+\clearpage
+\pagenumbering{arabic}
+
+\addstarredchapter{Introduction}
+\input{chapters/introduction}
+
+\input{chapters/chapitre1_etat_art}
+\input{chapters/chapitre2_methodologie}
+\input{chapters/chapitre3_implementation}
+\input{chapters/chapitre4_resultats}
+\input{chapters/chapitre5_discussion}
+
+\addstarredchapter{Conclusion}
+\input{chapters/conclusion}
+
+\addstarredchapter{Bibliographie} 
+\printbibliography
+
+\end{document}

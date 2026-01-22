@@ -1,0 +1,82 @@
+\section*{Contexte et Problématique}
+
+Les accidents de la route constituent l'une des principales causes de mortalité dans le monde, avec plus de 1,3 million de décès recensés annuellement selon l'Organisation Mondiale de la Santé \citep{who2023}. Face à ce constat alarmant, le développement de systèmes d'assistance à la conduite (ADAS - Advanced Driver Assistance Systems) et de véhicules autonomes représente un enjeu sociétal majeur. Au cœur de ces technologies se trouve la capacité à \textbf{anticiper les collisions} avant qu'elles ne se produisent, permettant ainsi d'alerter le conducteur ou d'activer des systèmes de freinage d'urgence.
+
+La prédiction de collisions par vision par ordinateur s'inscrit dans ce contexte d'innovation technologique pour la sécurité routière. Contrairement aux approches traditionnelles basées sur des capteurs (radar, lidar), l'analyse vidéo offre une richesse d'information visuelle comparable à la perception humaine, tout en étant économiquement plus accessible. Les dashcams, présentes dans de nombreux véhicules, constituent une source de données naturelle pour développer et évaluer ces systèmes de prédiction.
+
+\section*{Défis Scientifiques et Techniques}
+
+La prédiction de collisions à partir de vidéos dashcam soulève plusieurs défis majeurs :
+
+\begin{itemize}
+    \item \textbf{Anticipation temporelle} : Le système doit prédire l'événement suffisamment tôt (0,5 à 1,5 secondes avant l'impact) pour permettre une réaction, tout en maintenant une précision élevée.
+    
+    \item \textbf{Modélisation spatio-temporelle} : Contrairement à la classification d'images statiques, la compréhension des dynamiques de scène nécessite d'analyser conjointement les dimensions spatiales et temporelles.
+    
+    \item \textbf{Variabilité des scénarios} : Les situations de conduite présentent une grande diversité (conditions météorologiques, occultations, comportements imprévisibles des usagers).
+    
+    \item \textbf{Contraintes temps réel} : Pour être déployable dans un véhicule, le système doit effectuer ses inférences en temps réel (< 100ms) avec des ressources computationnelles limitées.
+    
+    \item \textbf{Déséquilibre des données} : Les situations de collision sont heureusement rares, créant un déséquilibre important dans les datasets disponibles.
+\end{itemize}
+
+\section*{État de l'Art et Approches Existantes}
+
+Le domaine de la reconnaissance d'actions et d'événements dans les vidéos a connu des avancées significatives ces dernières années, portées par le développement d'architectures de deep learning spécialisées. Plusieurs familles d'approches ont émergé :
+
+Les \textbf{architectures hybrides 2D CNN + RNN} \citep{donahue2015} constituent historiquement la première approche : un CNN 2D (ResNet, EfficientNet) extrait des features spatiales de chaque frame, puis un réseau récurrent (LSTM, GRU) modélise la dynamique temporelle. Cette approche bénéficie du transfer learning depuis ImageNet mais traite séquentiellement les dimensions spatiale et temporelle.
+
+Les \textbf{CNN 3D} \citep{carreira2017, tran2018} traitent directement le volume spatio-temporel via des convolutions 3D. Des architectures comme I3D (Inflated 3D ConvNet) ou R(2+1)D ont démontré leur efficacité sur des benchmarks de reconnaissance d'actions (Kinetics, UCF101), en capturant nativement les motifs spatio-temporels.
+
+Plus récemment, les \textbf{Vision Transformers} \citep{dosovitskiy2021, arnab2021} ont révolutionné la vision par ordinateur. Des adaptations vidéo comme TimeSformer, VideoMAE ou ViViT appliquent les mécanismes d'attention à la dimension temporelle, offrant potentiellement une meilleure modélisation des dépendances longue portée.
+
+Cependant, l'application spécifique de ces architectures à la prédiction de collisions reste peu explorée dans la littérature académique, et les études comparatives systématiques font défaut.
+
+\section*{Objectifs du Mémoire}
+
+Ce mémoire vise à combler ce manque en réalisant une \textbf{analyse comparative exhaustive} de six architectures représentatives des différentes familles mentionnées, appliquées à la tâche de prédiction de collisions. 
+
+Nos objectifs spécifiques sont :
+
+\begin{enumerate}
+    \item \textbf{Évaluer expérimentalement} six architectures issues de trois familles différentes (CNN-RNN hybrides, CNN 3D, Vision Transformers) sur un dataset standardisé de vidéos dashcam.
+    
+    \item \textbf{Identifier les facteurs clés} de performance : importance du pré-entraînement, impact de l'architecture sur la capacité de prédiction, compromis vitesse-précision.
+    
+    \item \textbf{Analyser quantitativement} les résultats selon plusieurs métriques (accuracy, precision, recall, Average Precision) et à différents horizons temporels (500ms, 1000ms, 1500ms).
+    
+    \item \textbf{Fournir des recommandations pratiques} pour le choix d'architecture selon les contraintes applicatives (performance maximale vs. déploiement temps réel).
+    
+    \item \textbf{Contribuer à la recherche} en documentant rigoureusement une méthodologie expérimentale reproductible et en identifiant les axes d'amélioration futurs.
+\end{enumerate}
+
+\section*{Cadre du Projet : Challenge Kaggle Nexar}
+
+Ce travail s'inscrit dans le cadre du \textbf{Nexar Collision Prediction Challenge} hébergé sur la plateforme Kaggle. Ce challenge propose un dataset de haute qualité constitué de 1,500 vidéos d'entraînement et 1,344 vidéos de test, issues de dashcams réelles et annotées manuellement. Les vidéos sont équilibrées entre cas positifs (collisions et near-miss) et cas négatifs (conduite normale).
+
+Le challenge définit une métrique d'évaluation rigoureuse : le Mean Average Precision (mAP) calculé sur trois horizons temporels différents (500ms, 1000ms, 1500ms avant la collision). Cette métrique évalue simultanément la capacité du modèle à distinguer les situations dangereuses ET à les anticiper suffisamment tôt.
+
+L'utilisation de ce challenge présente plusieurs avantages méthodologiques :
+\begin{itemize}
+    \item Dataset standardisé permettant la comparaison avec d'autres travaux
+    \item Annotations de qualité professionnelle
+    \item Protocole d'évaluation rigoureux et reproductible
+    \item Possibilité de valider les performances sur un test set privé via le leaderboard Kaggle
+\end{itemize}
+
+\section*{Contributions de ce Mémoire}
+
+Les principales contributions de ce travail sont :
+
+\begin{enumerate}
+    \item Une \textbf{comparaison expérimentale rigoureuse} de six architectures représentatives sur une tâche applicative concrète de prédiction de collisions.
+    
+    \item La \textbf{démonstration empirique} de l'importance du pré-entraînement sur données vidéo pour les architectures transformer (échec total sans pré-entraînement).
+    
+    \item L'identification d'\textbf{I3D comme architecture optimale} pour maximiser les performances (77,53\% AP validation, 71,2\% AP test Kaggle).
+    
+    \item La proposition d'\textbf{EfficientNet-GRU comme alternative efficiente} offrant le meilleur compromis vitesse-performance (71\% accuracy, 74,95\% AP).
+    
+    \item Une \textbf{méthodologie expérimentale documentée} incluant stratégies d'optimisation (pré-extraction de features, mixed precision training) et protocole d'évaluation reproductible reproductible disponible sur GitHub \cite{github_reference}
+\end{enumerate}
+

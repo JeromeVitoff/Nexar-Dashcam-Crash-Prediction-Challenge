@@ -1,0 +1,27 @@
+\newpage
+\section*{Rappel des Objectifs}
+
+Ce mémoire visait à réaliser une analyse comparative systématique d'architectures de deep learning pour la prédiction de collisions routières à partir de vidéos dashcam. Notre objectif était d'identifier les approches les plus performantes, de comprendre le rôle du pré-entraînement, et de fournir des recommandations pratiques pour le choix d'architecture selon les contraintes applicatives.
+
+
+\section*{Conclusion Finale}
+
+Ce mémoire a démontré que les architectures modernes de deep learning, correctement configurées et pré-entraînées, permettent d'atteindre des performances remarquables (77-78\% AP) pour la prédiction de collisions routières. La clé du succès réside dans :
+
+\begin{enumerate}
+    \item Le choix d'architecture adapté aux contraintes (3D CNN pour performance, hybrides pour vitesse)
+    \item L'utilisation systématique du pré-entraînement (Kinetics pour 3D/Transformers, ImageNet pour hybrides)
+    \item La régularisation rigoureuse pour limiter l'overfitting
+    \item La validation empirique en conditions réelles (Kaggle : 71,2\%)
+\end{enumerate}
+
+Les résultats obtenus, notamment la validation Kaggle à 71,2\% avec I3D, démontrent que ces systèmes sont matures pour une intégration dans des véhicules réels. La poursuite des recherches, notamment sur l'interprétabilité et le déploiement temps réel, permettra de franchir les derniers obstacles vers un déploiement à grande échelle contribuant significativement à la réduction des accidents routiers.
+
+L'avenir des systèmes ADAS repose sur la combinaison de ces approches de vision par ordinateur avec d'autres modalités sensorielles (radar, lidar) et une prise de décision intelligente. Ce mémoire établit les fondations solides pour ces développements futurs.
+
+\vspace{1cm}
+
+\begin{flushright}
+\textit{``The best way to predict the future is to invent it.''}\\
+Alan Kay
+\end{flushright}

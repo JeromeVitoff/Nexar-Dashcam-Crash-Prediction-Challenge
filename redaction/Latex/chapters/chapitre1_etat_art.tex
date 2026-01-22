@@ -1,0 +1,236 @@
+\chapter{État de l'Art}
+%\minitoc
+
+\section{Introduction}
+
+La reconnaissance d'actions et d'événements dans les vidéos constitue un domaine de recherche actif en vision par ordinateur depuis plus de deux décennies. L'émergence du deep learning a révolutionné ce domaine, permettant de dépasser les approches traditionnelles basées sur des features hand-crafted (HOG, HOF, trajectoires denses). Ce chapitre présente l'évolution des architectures de deep learning pour l'analyse vidéo, en se concentrant sur trois familles majeures pertinentes pour notre tâche de prédiction de collisions.
+
+\section{Fondements Théoriques du Deep Learning pour la Vidéo}
+
+\subsection{Spécificités de l'Analyse Vidéo}
+
+Une vidéo peut être formalisée comme un tenseur $\mathbf{V} \in \mathbb{R}^{T \times H \times W \times C}$ où $T$ représente le nombre de frames, $(H,W)$ les dimensions spatiales et $C$ les canaux couleur. Contrairement aux images statiques, l'analyse vidéo nécessite de modéliser conjointement :
+
+\begin{itemize}
+    \item La \textbf{dimension spatiale} : apparence des objets, scène, layout
+    \item La \textbf{dimension temporelle} : mouvements, dynamiques, causalité
+    \item Les \textbf{interactions spatio-temporelles} : trajectoires, déformations, corrélations
+\end{itemize}
+
+Cette modélisation conjointe constitue le défi central adressé par les différentes architectures que nous étudions.
+
+\subsection{Transfer Learning et Pré-entraînement}
+
+Le transfer learning, consistant à initialiser un modèle avec des poids pré-entraînés sur une tâche source avant de l'affiner sur une tâche cible, s'est imposé comme paradigme dominant en vision par ordinateur (\cite{yosinski2014}). Pour l'analyse vidéo, deux sources de pré-entraînement sont pertinentes :
+
+\begin{itemize}
+    \item \textbf{ImageNet} (\cite{deng2009}) : 14M images, 1000 classes d'objets. Adapté pour initialiser les composantes spatiales (backbones 2D CNN).
+    \item \textbf{Kinetics-400/600/700} (\cite{kay2017}) : 240K-650K vidéos, 400-700 classes d'actions. Spécifiquement conçu pour les architectures vidéo complètes.
+\end{itemize}
+
+Notre étude explorera systématiquement l'impact de ces différents régimes de pré-entraînement.
+
+\section{Architectures Hybrides : CNN 2D + RNN}
+
+\subsection{Principe Général}
+
+Les architectures hybrides adoptent une approche en deux étapes (\cite{donahue2015, yue-hei2015}) :
+
+\begin{enumerate}
+    \item \textbf{Extraction spatiale} : Un CNN 2D pré-entraîné (ResNet, EfficientNet) traite indépendamment chaque frame $\mathbf{I}_t$ et extrait un vecteur de features $\mathbf{f}_t \in \mathbb{R}^d$ :
+    $$\mathbf{f}_t = \text{CNN}(\mathbf{I}_t)$$
+    
+    \item \textbf{Modélisation temporelle} : Un réseau récurrent (LSTM, GRU) traite la séquence de features $(\mathbf{f}_1, \ldots, \mathbf{f}_T)$ pour capturer les dynamiques :
+    $$\mathbf{h}_t = \text{RNN}(\mathbf{f}_t, \mathbf{h}_{t-1})$$
+\end{enumerate}
+
+\subsection{ResNet-LSTM}
+
+ResNet (\cite{he2016}) a introduit les connexions résiduelles permettant d'entraîner des réseaux très profonds. Pour notre application, nous utilisons ResNet-50 pré-entraîné sur ImageNet comme extracteur de features (sortie couche avgpool : 2048 dimensions).
+
+Le LSTM (Long Short-Term Memory) (\cite{hochreiter1997}) résout le problème du vanishing gradient des RNN via des portes de contrôle :
+
+\begin{align}
+\mathbf{f}_t &= \sigma(\mathbf{W}_f \cdot [\mathbf{h}_{t-1}, \mathbf{x}_t] + \mathbf{b}_f) \quad \text{(forget gate)} \\
+\mathbf{i}_t &= \sigma(\mathbf{W}_i \cdot [\mathbf{h}_{t-1}, \mathbf{x}_t] + \mathbf{b}_i) \quad \text{(input gate)} \\
+\tilde{\mathbf{C}}_t &= \tanh(\mathbf{W}_C \cdot [\mathbf{h}_{t-1}, \mathbf{x}_t] + \mathbf{b}_C) \quad \text{(candidate)} \\
+\mathbf{C}_t &= \mathbf{f}_t \odot \mathbf{C}_{t-1} + \mathbf{i}_t \odot \tilde{\mathbf{C}}_t \quad \text{(cell state)} \\
+\mathbf{o}_t &= \sigma(\mathbf{W}_o \cdot [\mathbf{h}_{t-1}, \mathbf{x}_t] + \mathbf{b}_o) \quad \text{(output gate)} \\
+\mathbf{h}_t &= \mathbf{o}_t \odot \tanh(\mathbf{C}_t) \quad \text{(hidden state)}
+\end{align}
+
+\subsection{EfficientNet-GRU}
+
+EfficientNet (\cite{tan2019}) optimise simultanément la profondeur, largeur et résolution du réseau via un compound scaling. EfficientNet-B0, avec seulement 5,3M paramètres, offre de meilleures performances que ResNet-50 (25,6M paramètres) sur ImageNet.
+
+Le GRU (Gated Recurrent Unit) (\cite{cho2014}) simplifie l'architecture LSTM en fusionnant certaines portes :
+
+\begin{align}
+\mathbf{z}_t &= \sigma(\mathbf{W}_z \cdot [\mathbf{h}_{t-1}, \mathbf{x}_t]) \quad \text{(update gate)} \\
+\mathbf{r}_t &= \sigma(\mathbf{W}_r \cdot [\mathbf{h}_{t-1}, \mathbf{x}_t]) \quad \text{(reset gate)} \\
+\tilde{\mathbf{h}}_t &= \tanh(\mathbf{W} \cdot [\mathbf{r}_t \odot \mathbf{h}_{t-1}, \mathbf{x}_t]) \quad \text{(candidate)} \\
+\mathbf{h}_t &= (1 - \mathbf{z}_t) \odot \mathbf{h}_{t-1} + \mathbf{z}_t \odot \tilde{\mathbf{h}}_t \quad \text{(hidden state)}
+\end{align}
+
+Cette simplification réduit le nombre de paramètres (avantage computationnel) tout en maintenant des performances comparables au LSTM sur de nombreuses tâches.
+
+\subsection{Avantages et Limitations}
+
+\textbf{Avantages} :
+\begin{itemize}
+    \item Transfer learning efficace depuis ImageNet (backbones 2D bien établis)
+    \item Interprétabilité : séparation claire entre features spatiales et modélisation temporelle
+    \item Flexibilité : possibilité de pré-extraire les features pour accélérer l'expérimentation
+\end{itemize}
+
+\textbf{Limitations} :
+\begin{itemize}
+    \item Traitement séquentiel des dimensions spatiale et temporelle (pas de modélisation conjointe)
+    \item Les RNN sont intrinsèquement séquentiels (difficulté de parallélisation)
+    \item Dépendance à la qualité du backbone 2D qui n'a pas été entraîné sur des vidéos
+\end{itemize}
+
+\section{CNN 3D : Convolutions Spatio-Temporelles Natives}
+
+\subsection{Principe des Convolutions 3D}
+
+Les CNN 3D généralisent les convolutions 2D à la dimension temporelle (\cite{ji2013, tran2015}). Un filtre de convolution 3D $\mathbf{W} \in \mathbb{R}^{k_t \times k_h \times k_w \times c_{in} \times c_{out}}$ opère sur un volume spatio-temporel :
+
+$$\mathbf{y}_{i,j,t}^c = \sum_{c'=0}^{c_{in}-1} \sum_{m=0}^{k_h-1} \sum_{n=0}^{k_w-1} \sum_{l=0}^{k_t-1} \mathbf{W}_{l,m,n}^{c',c} \cdot \mathbf{x}_{i+m, j+n, t+l}^{c'}$$
+
+Cette opération capture nativement les motifs spatio-temporels locaux (ex: mouvements caractéristiques).
+
+\subsection{I3D (Inflated 3D ConvNet)}
+
+I3D (\cite{carreira2017}) propose une méthode élégante pour initialiser un CNN 3D à partir de poids ImageNet 2D : l'\textbf{inflation} consiste à répliquer les poids 2D le long de la dimension temporelle et à normaliser :
+
+$$\mathbf{W}_{3D}^{i,j,t} = \frac{1}{N_t} \mathbf{W}_{2D}^{i,j} \quad \forall t \in [1, N_t]$$
+
+L'architecture I3D reprend la structure Inception-V1 (\cite{szegedy2015}) avec des modules Inception 3D combinant plusieurs tailles de filtres. Cette architecture a établi de nouveaux records sur Kinetics-400 lors de sa publication.
+
+\subsection{R(2+1)D : Factorisation Spatio-Temporelle}
+
+R(2+1)D (\cite{tran2018}) décompose une convolution 3D $k_t \times k_h \times k_w$ en une convolution spatiale 2D $1 \times k_h \times k_w$ suivie d'une convolution temporelle 1D $k_t \times 1 \times 1$ :
+
+$$\mathbf{y} = \text{Conv1D}_t(\text{ReLU}(\text{Conv2D}_{hw}(\mathbf{x})))$$
+
+Cette factorisation présente plusieurs avantages :
+\begin{itemize}
+    \item \textbf{Paramètres réduits} : $k_t \cdot k_h \cdot k_w \cdot c_{in} \cdot c_{out}$ vs. $k_h \cdot k_w \cdot c_{in} \cdot c_{mid} + k_t \cdot c_{mid} \cdot c_{out}$
+    \item \textbf{Plus de non-linéarités} : introduction d'une ReLU supplémentaire entre les deux convolutions
+    \item \textbf{Optimisation facilitée} : séparation des gradients spatiaux et temporels
+\end{itemize}
+
+Les résultats empiriques montrent que R(2+1)D surpasse les CNN 3D classiques avec moins de paramètres.
+
+\subsection{Comparaison I3D vs R(2+1)D}
+
+\begin{table}[h]
+\centering
+\caption{Comparaison architecturale I3D vs R(2+1)D}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Caractéristique} & \textbf{I3D} & \textbf{R(2+1)D} \\
+\midrule
+Architecture de base & Inception-V1 & ResNet-18/34/50 \\
+Type de convolution & 3D native & (2+1)D factorisée \\
+Paramètres (ResNet-18) & - & 33M \\
+Paramètres (ResNet-50) & ~28M & ~46M \\
+Pré-entraînement & ImageNet $\rightarrow$ Inflation & ImageNet + Sports-1M \\
+Complexité & Haute (Inception) & Modérée (ResNet) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Vision Transformers pour la Vidéo}
+
+\subsection{Rappels sur les Transformers}
+
+Le Transformer (\cite{vaswani2017}), initialement conçu pour le traitement du langage naturel, repose sur le mécanisme d'attention :
+
+$$\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\left(\frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}}\right)\mathbf{V}$$
+
+où $\mathbf{Q}$ (queries), $\mathbf{K}$ (keys) et $\mathbf{V}$ (values) sont des projections linéaires de l'entrée. La multi-head attention permet d'apprendre plusieurs représentations d'attention en parallèle.
+
+L'adaptation aux images (Vision Transformer - ViT) (\cite{dosovitskiy2021}) découpe l'image en patches et les traite comme des tokens séquentiels.
+
+\subsection{TimeSformer}
+
+TimeSformer (\cite{bertasius2021}) étend ViT aux vidéos en introduisant une attention \textbf{divided} séparant les dimensions spatiale et temporelle :
+
+\begin{enumerate}
+    \item \textbf{Temporal attention} : Chaque patch $p_{t,i,j}$ attend sur tous les patches au même emplacement spatial $(i,j)$ mais à différents instants
+    \item \textbf{Spatial attention} : Chaque patch attend sur tous les patches au même instant $t$
+\end{enumerate}
+
+Cette factorisation réduit drastiquement la complexité par rapport à une attention spatio-temporelle jointe ($O(T^2HW + THW^2)$ vs. $O(T^2H^2W^2)$).
+
+\subsection{VideoMAE}
+
+VideoMAE (\cite{tong2022}) adapte le paradigme du Masked Autoencoding (MAE) (\cite{he2022}) aux vidéos. Le pré-entraînement consiste à :
+
+\begin{enumerate}
+    \item Masquer aléatoirement 90\% des patches spatio-temporels
+    \item Encoder les patches visibles via un ViT
+    \item Décoder pour reconstruire les patches masqués
+\end{enumerate}
+
+Cette approche de self-supervised learning sur vidéos non annotées permet d'apprendre des représentations robustes avant le fine-tuning sur la tâche cible.
+
+\subsection{Importance du Pré-entraînement pour les Transformers}
+
+Contrairement aux CNN qui peuvent être entraînés efficacement from scratch sur des datasets de taille modérée, les Transformers nécessitent :
+
+\begin{itemize}
+    \item \textbf{Datasets massifs} : Les architectures transformer ont beaucoup de paramètres et peu de biais inductifs
+    \item \textbf{Pré-entraînement vidéo} : Kinetics-400 (240K vidéos) est considéré comme un minimum pour les video transformers
+    \item \textbf{Régularisation forte} : Dropout élevé, data augmentation intensive
+\end{itemize}
+
+Nous vérifierons expérimentalement cette hypothèse en comparant TimeSformer avec et sans pré-entraînement.
+
+\section{Travaux Connexes sur la Prédiction de Collisions}
+
+\subsection{Approches Classiques}
+
+Avant l'ère du deep learning, les approches de prédiction de collision reposaient sur :
+
+\begin{itemize}
+    \item \textbf{Optical flow} (\cite{lucas1981}) : Détection de mouvements anormaux
+    \item \textbf{Time-to-Collision (TTC)} (\cite{lee1976}) : Estimation du temps avant impact basée sur des features géométriques
+    \item \textbf{Détection d'objets + suivi} : Tracking de véhicules et piétons \cite{viola2001}
+\end{itemize}
+
+Ces méthodes, bien que robustes dans des scénarios contrôlés, peinent à généraliser à la diversité des situations réelles.
+
+\subsection{Approches Deep Learning}
+
+Plusieurs travaux récents appliquent le deep learning à la prédiction d'accidents :
+
+\cite{suzuki2018} proposent un CNN 3D entraîné sur le dataset Car Crash Dataset (CCD), atteignant 77,5\% d'accuracy pour prédire les collisions 1 seconde avant l'impact.
+
+\cite{bao2020} utilisent un Two-Stream Network (RGB + optical flow) sur le dataset A3D, démontrant l'intérêt de combiner apparence et mouvement.
+
+\cite{yao2019} explorent les architectures Graph Convolutional Networks pour modéliser les interactions entre véhicules sur le dataset PREVENTION.
+
+Notre travail se distingue par :
+
+\begin{itemize}
+    \item Une \textbf{comparaison systématique} de 6 architectures représentatives
+    \item L'évaluation sur un \textbf{dataset standardisé} (Nexar Challenge)
+    \item L'analyse de l'\textbf{impact du pré-entraînement} pour différentes familles
+    \item La considération des \textbf{contraintes pratiques} (temps d'inférence, complexité)
+\end{itemize}
+
+\section{Synthèse et Positionnement}
+
+Ce chapitre a présenté trois familles d'architectures pour l'analyse vidéo :
+
+\begin{itemize}
+    \item \textbf{CNN-RNN hybrides} : Approche séquentielle spatial - temporal, bénéficiant du transfer learning ImageNet
+    \item \textbf{CNN 3D} : Modélisation native des motifs spatio-temporels, pré-entraînement Kinetics
+    \item \textbf{Vision Transformers} : Attention spatio-temporelle, nécessitant pré-entraînement massif
+\end{itemize}
+\begin{flushleft}
+Les chapitres suivants décriront notre méthodologie expérimentale pour comparer ces approches sur la tâche de prédiction de collisions, présenteront les résultats détaillés, et fourniront des recommandations pratiques basées sur nos observations empiriques.
+\end{flushleft}

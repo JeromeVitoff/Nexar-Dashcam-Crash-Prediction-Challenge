@@ -1,0 +1,650 @@
+\chapter{Résultats Expérimentaux}
+%\minitoc
+
+\section{Introduction}
+
+Ce chapitre présente les résultats expérimentaux obtenus pour les six architectures évaluées. Pour chaque modèle, nous présentons les courbes d'apprentissage, les métriques de performance, et une analyse détaillée. Nous concluons par une comparaison globale et une validation sur le test set Kaggle.
+
+\section{Modèles Hybrides CNN-RNN}
+
+\subsection{ResNet-LSTM}
+
+\subsubsection{Configuration et Entraînement}
+
+ResNet-LSTM constitue notre modèle baseline, combinant ResNet-50 pré-entraîné sur ImageNet avec un LSTM à 3 couches.
+
+\textbf{Configuration retenue} :
+\begin{itemize}
+    \item Features : ResNet-50 (2048 dim), frozen
+    \item LSTM : 512 hidden units, 3 layers, dropout 0.3
+    \item Frames : 16 (échantillonnage uniforme)
+    \item Batch size : 32
+    \item Temps d'entraînement : 3h (pré-extraction + fine-tuning)
+\end{itemize}
+
+\subsubsection{Résultats}
+
+\begin{table}[h]
+\centering
+\caption{Résultats ResNet-LSTM}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Métrique} & \textbf{Train} & \textbf{Validation} \\
+\midrule
+Accuracy & 82.50\% & 67.33\% \\
+Precision & 0.85 & 0.68 \\
+Recall & 0.80 & 0.66 \\
+F1-Score & 0.82 & 0.67 \\
+Average Precision (AP) & 0.91 & 69.48\% \\
+Loss (final) & 0.421 & 0.652 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Le modèle atteint 67,33\% d'accuracy en validation et 69,48\% d'Average Precision. On observe un écart significatif entre train et validation (accuracy : 82,50\% vs 67,33\%), indiquant un overfitting modéré.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{resnet_lstm_curves.pdf}
+\caption{Courbes d'apprentissage ResNet-LSTM sur 12 epochs}. 
+\label{fig:resnet_lstm_curves}
+\end{figure}
+\begin{flushleft}
+On observe un overfitting modéré avec un gap train-validation de 15,17\% en accuracy. L'AP atteint 69,48\% à l'epoch 12.
+\end{flushleft}
+
+\subsubsection{Analyse}
+
+\textbf{Points forts} :
+\begin{itemize}
+    \item Baseline solide établissant une performance de référence
+    \item Entraînement rapide grâce à la pré-extraction
+    \item Architecture simple et interprétable
+\end{itemize}
+
+\textbf{Limitations} :
+\begin{itemize}
+    \item Backbone frozen limite l'adaptation au domaine spécifique
+    \item Features ImageNet pas optimales pour vidéos dashcam
+    \item Overfitting visible malgré dropout
+\end{itemize}
+
+\textbf{Note méthodologique} : Les features ResNet-50 ont été pré-extraites une seule fois (temps : $\sim$2h), puis le LSTM a été entraîné sur ces features figées (temps : $\sim$1h). Cette stratégie de pré-extraction réduit considérablement le temps d'expérimentation (gain $\times$8) tout en préservant les performances, permettant d'itérer rapidement sur les hyperparamètres du LSTM.
+
+\subsection{EfficientNet-GRU}
+
+\subsubsection{Configuration et Entraînement}
+
+EfficientNet-GRU améliore le baseline en utilisant un backbone plus efficace et un GRU bidirectionnel.
+
+\textbf{Configuration retenue} :
+\begin{itemize}
+    \item Features : EfficientNet-B0 (1280 dim), frozen
+    \item GRU : Bidirectionnel, 512 hidden units, 3 layers, dropout 0.5
+    \item Frames : 16
+    \item Batch size : 32
+    \item Temps d'entraînement : 3h
+\end{itemize}
+
+\subsubsection{Résultats}
+
+\begin{table}[h]
+\centering
+\caption{Résultats EfficientNet-GRU}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Métrique} & \textbf{Train} & \textbf{Validation} \\
+\midrule
+Accuracy & 88.25\% & \textbf{71.00\%} \\
+Precision & 0.89 & 0.72 \\
+Recall & 0.87 & 0.70 \\
+F1-Score & 0.88 & 0.71 \\
+Average Precision (AP) & 0.95 & 74.95\% \\
+Loss (final) & 0.312 & 0.587 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+EfficientNet-GRU surpasse ResNet-LSTM avec 71\% d'accuracy et 74,95\% d'AP. Le GRU bidirectionnel capture mieux les dynamiques temporelles dans les deux directions.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{efficientnet_gru_curves.pdf}
+\caption{Courbes d'apprentissage EfficientNet-GRU avec architecture bidirectionnelle et dropout 0.5.}
+\label{fig:efficientnet_gru_curves}
+\end{figure}
+Le modèle atteint 71\% d'accuracy et 74,95\% d'AP, surpassant ResNet-LSTM de +3,67\% et +5,47\% respectivement.
+
+\subsubsection{Analyse}
+
+\textbf{Étude d'ablation réalisée} : Plusieurs configurations ont été testées systématiquement pour identifier la configuration optimale :
+
+\begin{table}[H]
+\centering
+\caption{Étude d'ablation - Configurations EfficientNet-GRU testées}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Configuration} & \textbf{Accuracy} & \textbf{AP} & \textbf{Temps} \\
+\midrule
+Baseline (dropout 0.3) & 68.00\% & 72.87\% & 3h \\
+Dropout 0.5 & 68.67\% & 73.42\% & 3h \\
+\textbf{Bidirectionnel + Dropout 0.5} & \textbf{71.00\%} & \textbf{74.95\%} & 3h \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Le GRU bidirectionnel apporte un gain substantiel de +2,13\% en accuracy et +2,08\% en AP, justifiant son adoption comme configuration finale.
+
+\textbf{Améliorations par rapport à ResNet-LSTM} :
+\begin{itemize}
+    \item +3,67\% accuracy (71\% vs 67,33\%)
+    \item +5,47\% AP (74,95\% vs 69,48\%)
+    \item Backbone plus léger (5,3M vs 25,6M params)
+\end{itemize}
+
+\textbf{Impact du GRU bidirectionnel} : Le traitement bidirectionnel permet de capturer des patterns temporels complexes dans les deux sens temporels. Par exemple, pour détecter une collision imminente, le modèle peut analyser à la fois les événements précédents (ralentissement progressif) et les indices futurs dans la séquence, améliorant la discrimination entre conduite normale et situation dangereuse.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{hybrid_models_comparison.pdf}
+\caption{Comparaison des modèles hybrides CNN-RNN.} 
+\label{fig:hybrid_comparison}
+\end{figure}
+EfficientNet-GRU surpasse ResNet-LSTM sur les deux métriques, démontrant l'efficacité du backbone EfficientNet combiné au GRU bidirectionnel.
+
+\section{Modèles 3D CNN}
+
+\subsection{I3D (R3D-18)}
+
+\subsubsection{Configuration et Entraînement}
+
+I3D, avec R3D-18 comme backbone, représente notre première architecture 3D CNN complète.
+
+\textbf{Configuration retenue} :
+\begin{itemize}
+    \item Architecture : R3D-18 pré-entraîné Kinetics-400
+    \item Frames : 8 (résolution 160×160)
+    \item Batch size : 16
+    \item Fine-tuning : End-to-end
+    \item Paramètres : 33,3M
+    \item Temps d'entraînement : 6h (23 epochs, early stop)
+\end{itemize}
+
+\subsubsection{Résultats}
+
+\begin{table}[H]
+\centering
+\caption{Résultats I3D}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Métrique} & \textbf{Train} & \textbf{Validation} \\
+\midrule
+Accuracy & 99.58\% & 70.00\% \\
+Precision & 0.996 & 0.742 \\
+Recall & 0.995 & 0.625 \\
+F1-Score & 0.996 & 0.679 \\
+Average Precision (AP) & 0.999 & \textbf{77.53\%} \\
+Loss (final) & 0.012 & 1.228 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Performance Kaggle} :
+\begin{itemize}
+    \item Public Leaderboard : 66.9\%
+    \item Private Leaderboard : \textbf{71.2\%}
+\end{itemize}
+
+I3D établit un nouveau record avec 77,53\% d'AP en validation, confirmé par 71,2\% sur le test set privé Kaggle.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{i3d_curves.pdf}
+\caption{Courbes d'apprentissage I3D sur 13 epochs (early stopping).}
+\label{fig:i3d_curves}
+\end{figure}
+Le modèle atteint 77,53\% d'AP mais présente un overfitting sévère visible dès l'epoch 3, avec un gap train-validation atteignant 29,58\%.
+
+\subsubsection{Analyse de l'Overfitting}
+
+Un overfitting sévère est observé :
+\begin{itemize}
+    \item Gap accuracy : 99,58\% (train) vs 70\% (val) = 29,58\%
+    \item Gap loss : 0,012 vs 1,228 = 1,216
+\end{itemize}
+
+\textbf{Causes identifiées} :
+\begin{itemize}
+    \item Ratio paramètres/données élevé : 33,3M params pour 1,200 vidéos = 27,750 params/vidéo
+    \item Fine-tuning complet sans régularisation suffisante
+    \item 8 frames seulement (information temporelle limitée)
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{i3d_overfitting_analysis.pdf}
+\caption{Analyse détaillée de l'overfitting I3D.} 
+\label{fig:i3d_overfitting}
+\end{figure}
+
+\begin{flushleft}
+Le gap train-validation croît rapidement, dépassant le seuil acceptable (15\%) dès l'epoch 5 et atteignant 30\% à la fin de l'entraînement. La zone orange illustre l'écart entre les courbes.
+\vspace{1cm}
+
+\textbf{Malgré l'overfitting}, I3D généralise bien sur le test Kaggle (71,2\%), suggérant que les features apprises sont robustes.
+
+\textbf{Sélection du checkpoint} : Le checkpoint de l'epoch 13 a été retenu pour la soumission Kaggle (AP=77,53\%) plutôt que l'epoch 10 (AP=75,71\%) ou le dernier epoch disponible. Cette sélection démontre l'efficacité de la stratégie d'early stopping basée sur l'Average Precision de validation plutôt que sur la loss, métrique plus sensible à l'overfitting dans notre cas.
+\end{flushleft}
+
+\subsection{R(2+1)D}
+
+\subsubsection{Configuration et Entraînement}
+
+R(2+1)D utilise des convolutions factorisées (2D spatial + 1D temporal) comme alternative à I3D.
+
+\textbf{Configuration retenue} :
+\begin{itemize}
+    \item Architecture : R(2+1)D-18 pré-entraîné Kinetics
+    \item Frames : 8 (résolution 160×160)
+    \item Batch size : 16
+    \item Paramètres : $\sim$32M
+    \item Temps d'entraînement : 5h
+\end{itemize}
+
+\subsubsection{Résultats}
+
+\begin{table}[H]
+\centering
+\caption{Résultats R(2+1)D}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Métrique} & \textbf{Train} & \textbf{Validation} \\
+\midrule
+Accuracy & 96.83\% & 68.67\% \\
+Precision & 0.972 & 0.701 \\
+Recall & 0.965 & 0.672 \\
+F1-Score & 0.968 & 0.686 \\
+Average Precision (AP) & 0.996 & 76.58\% \\
+Loss (final) & 0.089 & 0.891 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+R(2+1)D obtient 76,58\% d'AP, légèrement inférieur à I3D (-0,95\%), avec un overfitting moins prononcé.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{r2plus1d_curves.pdf}
+\caption{Courbes d'apprentissage R(2+1)D sur 9 epochs.}
+\label{fig:r2plus1d_curves}
+\end{figure}
+\begin{flushleft}
+Les convolutions factorisées (2+1)D offrent une meilleure régularisation que I3D, avec un gap d'overfitting réduit (28,16\% vs 29,58\%).
+\end{flushleft}
+
+\subsubsection{Comparaison I3D vs R(2+1)D}
+
+\begin{table}[H]
+\centering
+\caption{Comparaison I3D vs R(2+1)D}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Critère} & \textbf{I3D} & \textbf{R(2+1)D} \\
+\midrule
+Val Accuracy & 70.00\% & 68.67\% \\
+Val AP & \textbf{77.53\%} & 76.58\% \\
+Overfitting (gap loss) & 1.216 & 0.802 \\
+Paramètres & 33.3M & 32M \\
+Temps entraînement & 6h & 5h \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Conclusion} : I3D surpasse légèrement R(2+1)D en AP (+0,95\%) mais avec un overfitting plus marqué. Les convolutions factorisées de R(2+1)D offrent une meilleure régularisation.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{3dcnn_comparison.pdf}
+\caption{Comparaison des CNN 3D.} 
+\label{fig:3dcnn_comparison}
+\end{figure}
+I3D surpasse légèrement R(2+1)D en AP (+0,95\%) et accuracy (+1,33\%), mais au prix d'un overfitting plus marqué. Les convolutions factorisées de R(2+1)D offrent un meilleur compromis performance-régularisation.
+
+\section{Vision Transformers}
+
+\subsection{TimeSformer (from scratch)}
+
+\subsubsection{Configuration et Entraînement}
+
+TimeSformer est entraîné \textbf{from scratch} (sans pré-entraînement) pour évaluer la nécessité du pre-training.
+
+\textbf{Configuration} :
+\begin{itemize}
+    \item Architecture : TimeSformer-base
+    \item Pré-entraînement : \textbf{Aucun}
+    \item Frames : 8 (résolution 224×224)
+    \item Batch size : 8
+    \item Paramètres : $\sim$120M
+    \item Temps d'entraînement : 8h
+\end{itemize}
+
+\subsubsection{Résultats}
+
+\begin{table}[H]
+\centering
+\caption{Résultats TimeSformer (from scratch)}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Métrique} & \textbf{Train} & \textbf{Validation} \\
+\midrule
+Accuracy & 52.17\% & 50.67\% \\
+Precision & 0.51 & 0.51 \\
+Recall & 0.53 & 0.50 \\
+F1-Score & 0.52 & 0.50 \\
+Average Precision (AP) & 0.54 & 50.67\% \\
+Loss (final) & 0.693 & 0.693 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Résultat catastrophique} : TimeSformer n'apprend pas, restant au niveau de la performance aléatoire (50\% pour un problème binaire équilibré).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{timesformer_failure.pdf}
+\caption{Échec catastrophique de TimeSformer entraîné from scratch.}
+\label{fig:timesformer_failure}
+\end{figure}
+Les courbes stagnent à 50\% (niveau aléatoire) et la loss reste à 0,693 ($-\log(0.5)$), démontrant l'absence totale d'apprentissage malgré 30 epochs. Les fluctuations observées sont purement aléatoires.
+
+\subsubsection{Analyse de l'Échec}
+
+\textbf{Symptômes observés} :
+\begin{itemize}
+    \item Accuracy stagne à $\sim$50\% dès l'epoch 1
+    \item Loss reste à 0,693 (= $-\log(0.5)$, entropie maximale)
+    \item Aucune convergence malgré 30 epochs
+\end{itemize}
+
+\textbf{Causes identifiées} :
+\begin{enumerate}
+    \item \textbf{Dataset trop petit} : 1,200 vidéos insuffisant pour 120M paramètres
+    \item \textbf{Absence de pré-entraînement} : Les transformers nécessitent pré-entraînement massif sur vidéos (Kinetics-400 minimum)
+    \item \textbf{Biais inductifs faibles} : Contrairement aux CNN, les transformers n'ont pas de biais de localité/translation
+\end{enumerate}
+
+\textbf{Conclusion critique} : \textit{Cette expérience démontre empiriquement que les Vision Transformers ne peuvent pas être entraînés from scratch sur des datasets de taille modérée ($<$10K vidéos). Le pré-entraînement sur données vidéo massives est obligatoire.}
+
+\subsection{VideoMAE (avec pré-entraînement)}
+
+\subsubsection{Configuration et Entraînement}
+
+VideoMAE, pré-entraîné sur Kinetics-400 via Masked Autoencoding, teste l'hypothèse du pré-entraînement.
+
+\textbf{Configuration} :
+\begin{itemize}
+    \item Architecture : ViT-Base adapté vidéo
+    \item Pré-entraînement : \textbf{Kinetics-400 (MAE)}
+    \item Frames : 16 (résolution 224×224)
+    \item Batch size : 8
+    \item Paramètres : $\sim$86M
+    \item Temps d'entraînement : 7h (19 epochs, early stop)
+\end{itemize}
+
+\subsubsection{Résultats}
+
+\begin{table}[H]
+\centering
+\caption{Résultats VideoMAE}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Métrique} & \textbf{Train} & \textbf{Validation} \\
+\midrule
+Accuracy & 99.17\% & 68.00\% \\
+Precision & 0.995 & 0.690 \\
+Recall & 0.988 & 0.669 \\
+F1-Score & 0.992 & 0.679 \\
+Average Precision (AP) & 0.999 & 78.84\% \\
+Loss (final) & 0.067 & 1.252 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+VideoMAE atteint 78,84\% d'AP, \textbf{le meilleur score de tous les modèles}, mais avec un overfitting sévère similaire à I3D.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{videomae_curves.pdf}
+\caption{Courbes d'apprentissage VideoMAE pré-entraîné sur Kinetics-400.}
+\label{fig:videomae_curves}
+\end{figure}
+Le modèle atteint le meilleur AP de tous les modèles (78,84\%) mais présente un overfitting sévère similaire à I3D (gap de 31,17\%).
+
+\subsubsection{Comparaison TimeSformer vs VideoMAE}
+
+\begin{table}[H]
+\centering
+\caption{Impact du pré-entraînement sur les Transformers}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Modèle} & \textbf{Pré-entraînement} & \textbf{Val AP} \\
+\midrule
+TimeSformer & Non & 50.67\% (échec) \\
+VideoMAE & Oui (Kinetics-400) & \textbf{78.84\%} (meilleur) \\
+\midrule
+\textbf{Différence} & & \textbf{+28.17\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{pretraining_impact.pdf}
+\caption{Impact spectaculaire du pré-entraînement sur les Vision Transformers.}
+\label{fig:pretraining_impact}
+\end{figure}
+La différence de +28,17\% entre TimeSformer (from scratch) et VideoMAE (pré-entraîné) démontre que le pré-entraînement sur données vidéo est absolument critique pour ces architectures.
+
+
+\textbf{Conclusion majeure} : Le pré-entraînement sur données vidéo est \textit{absolument critique} pour les Vision Transformers (+28\% AP). Sans pré-entraînement, l'architecture échoue complètement.
+
+\section{Tableau Comparatif Global}
+
+\subsection{Classement par Métrique}
+
+\begin{table}[H]
+\centering
+\caption{Comparaison globale des 6 modèles}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Modèle} & \textbf{Pré-entraînement} & \textbf{Accuracy} & \textbf{AP} & \textbf{Temps} \\
+\midrule
+\textbf{VideoMAE} & Oui (Kinetics) & 68.00\% & \textbf{78.84\%} & 7h \\
+\textbf{I3D} & Oui (Kinetics) & 70.00\% & 77.53\% & 6h \\
+R(2+1)D & Oui (Kinetics) & 68.67\% & 76.58\% & 5h \\
+EfficientNet-GRU & Oui (ImageNet) & \textbf{71.00\%} & 74.95\% & 3h \\
+ResNet-LSTM & Oui (ImageNet) & 67.33\% & 69.48\% & 3h \\
+TimeSformer & Non & 50.67\% & 50.67\% & 8h \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{ap_comparison.pdf}
+\caption{Comparaison globale - Average Precision.} 
+\label{fig:ap_comparison}
+\end{figure}
+
+VideoMAE domine avec 78,84\%, suivi d'I3D (77,53\%) et R(2+1)D (76,58\%). TimeSformer échoue à 50,67\%, au niveau du hasard.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{accuracy_comparison.pdf}
+\caption{Comparaison globale - Accuracy}. 
+\label{fig:accuracy_comparison}
+\end{figure}
+
+EfficientNet-GRU atteint la meilleure accuracy (71\%), devant I3D (70\%). Les Transformers ont des accuracies modérées malgré leurs AP élevés.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{accuracy_vs_ap.pdf}
+\caption{Trade-off Accuracy vs Average Precision.}
+\label{fig:accuracy_vs_ap}
+\end{figure}
+
+On observe une dissociation entre les deux métriques : EfficientNet-GRU maximise l'accuracy tandis que VideoMAE et I3D maximisent l'AP, révélant des stratégies de classification différentes.
+
+\subsection{Classement par Famille}
+
+\begin{table}[H]
+\centering
+\caption{Performance moyenne par famille d'architecture}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Famille} & \textbf{Accuracy Moy.} & \textbf{AP Moy.} \\
+\midrule
+Vision Transformers (avec pré-train.) & 68.00\% & 78.84\% \\
+CNN 3D & 69.34\% & 77.06\% \\
+CNN-RNN Hybrides & 69.17\% & 72.22\% \\
+Vision Transformers (sans pré-train.) & 50.67\% & 50.67\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{family_comparison.pdf}
+\caption{Performance moyenne par famille d'architecture.} 
+\label{fig:family_comparison}
+\end{figure}
+
+Les Vision Transformers (avec pré-entraînement) dominent avec 78,84\% d'AP moyen, suivis des CNN 3D (77,06\%) et des hybrides CNN-RNN (72,22\%). Sans pré-entraînement, les Transformers échouent complètement.
+
+\section{Analyse des Patterns Observés}
+
+\subsection{Impact du Pré-entraînement}
+
+\begin{itemize}
+    \item \textbf{ImageNet (images)} : Efficace pour backbones 2D (ResNet, EfficientNet) avec gains modérés
+    \item \textbf{Kinetics (vidéos)} : Crucial pour CNN 3D et Transformers, permettant de capturer les dynamiques spatio-temporelles
+    \item \textbf{Sans pré-entraînement} : Échec complet pour Transformers (50,67\% AP)
+\end{itemize}
+
+\subsection{Compromis Accuracy vs AP}
+
+On observe une \textbf{dissociation} entre accuracy et AP :
+\begin{itemize}
+    \item \textbf{EfficientNet-GRU} : Meilleure accuracy (71\%) mais AP inférieur (74,95\%)
+    \item \textbf{VideoMAE/I3D} : Accuracy modérée (68-70\%) mais meilleurs AP (78,84\%, 77,53\%)
+\end{itemize}
+
+\textbf{Interprétation} : L'AP évalue la qualité du ranking des prédictions, pas seulement le seuil de décision. Les modèles 3D/Transformers produisent des scores de confiance mieux calibrés.
+
+\subsection{Overfitting}
+
+Tous les modèles sauf les hybrides présentent un overfitting significatif :
+
+\begin{table}[H]
+\centering
+\caption{Analyse de l'overfitting}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Modèle} & \textbf{Train Acc} & \textbf{Val Acc} & \textbf{Gap} \\
+\midrule
+VideoMAE & 99.17\% & 68.00\% & 31.17\% \\
+I3D & 99.58\% & 70.00\% & 29.58\% \\
+R(2+1)D & 96.83\% & 68.67\% & 28.16\% \\
+EfficientNet-GRU & 88.25\% & 71.00\% & 17.25\% \\
+ResNet-LSTM & 82.50\% & 67.33\% & 15.17\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{overfitting_analysis.pdf}
+\caption{Analyse de l'overfitting - Gap Train-Validation.}
+\label{fig:overfitting_analysis}
+\end{figure}
+
+VideoMAE et I3D présentent les gaps les plus importants ($>$30\%), tandis que les modèles hybrides sont mieux régularisés (15-17\%)
+
+
+\textbf{Causes} :
+\begin{itemize}
+    \item Ratio paramètres/données élevé (33-120M params, 1,200 vidéos)
+    \item Fine-tuning complet augmente le risque d'overfitting
+    \item Dataset modeste pour architectures modernes
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{training_time.pdf}
+\caption{Temps d'entraînement par modèle.}
+\label{fig:training_time}
+\end{figure}
+
+Les modèles hybrides sont les plus rapides (3h) grâce à la pré-extraction de features. TimeSformer est le plus lent (8h) malgré son échec complet.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{parameters_count.pdf}
+\caption{Complexité des modèles (nombre de paramètres, échelle logarithmique).}
+\label{fig:parameters_count}
+\end{figure}
+
+TimeSformer est le plus lourd (120M), suivi de VideoMAE (86M) et I3D (33M). Les hybrides sont les plus légers (1,6-3,6M).
+
+\section{Validation Kaggle (I3D)}
+
+Le modèle I3D a été soumis au Challenge Kaggle :
+
+\begin{table}[H]
+\centering
+\caption{Scores Kaggle I3D}
+\begin{tabular}{lc}
+\toprule
+\textbf{Métrique} & \textbf{Score} \\
+\midrule
+Validation AP (local) & 77.53\% \\
+Public Leaderboard mAP & 66.9\% \\
+Private Leaderboard mAP & \textbf{71.2\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observations} :
+\begin{itemize}
+    \item Gap validation-test : 77,53\% $\rightarrow$ 71,2\% = -6,33\%
+    \item Private > Public : 71,2\% > 66,9\% = +4,3\% (bonne généralisation)
+    \item Le modèle ne sur-ajuste pas au test public
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{kaggle_validation.pdf}
+\caption{Validation Kaggle du modèle I3D.}
+\label{fig:kaggle_validation}
+\end{figure}
+
+Le score private (71,2\%) est supérieur au score public (66,9\%), indiquant une bonne généralisation et l'absence de sur-ajustement au test set public. Le gap avec la validation locale (77,53\%) est de -6,33\%, acceptable pour cette tâche.
+
+
+Le score private (71,2\%) confirme la robustesse du modèle I3D malgré l'overfitting observé en validation.
+
+\section{Synthèse}
+
+Ce chapitre a présenté les résultats expérimentaux complets pour les six architectures :
+
+\textbf{Principaux enseignements} :
+\begin{enumerate}
+    \item \textbf{VideoMAE et I3D} atteignent les meilleures performances (78,84\% et 77,53\% AP)
+    \item \textbf{EfficientNet-GRU} offre le meilleur compromis accuracy/vitesse (71\%, 3h)
+    \item \textbf{Pré-entraînement vidéo obligatoire} pour Transformers (+28\% AP vs from scratch)
+    \item \textbf{Overfitting généralisé} sur ce dataset de taille modérée
+    \item \textbf{Validation Kaggle} confirme la robustesse (71,2\% private)
+\end{enumerate}
+
+Le chapitre suivant discutera ces résultats en profondeur et formulera des recommandations pratiques.
