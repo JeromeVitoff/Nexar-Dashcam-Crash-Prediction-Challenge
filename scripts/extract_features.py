@@ -156,7 +156,14 @@ def main():
     extractor = FeatureExtractor().to(device)
     
     # Transform (validation mode = pas d'augmentation)
-    transform = get_transform(mode='val', img_size=224, augmentation='none')
+    # Transform pour validation (pas d'augmentation)
+    from torchvision import transforms
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
     
     # Extraction
     print(f"\n🚀 Début de l'extraction...")
@@ -168,8 +175,8 @@ def main():
     
     for idx, row in tqdm(df.iterrows(), total=len(df), desc="Extraction"):
         video_id = row['id']
-        video_path = Path(args.train_dir) / f"{video_id}.mp4"
-        output_path = output_dir / f"{video_id}.pt"
+        video_path = Path(args.train_dir) / f"{int(video_id):05d}.mp4"
+        output_path = output_dir / f"{int(video_id):05d}.pt"
         
         # Skip si déjà extrait
         if output_path.exists():
@@ -194,7 +201,7 @@ def main():
             # Sauvegarder
             torch.save({
                 'features': features,  # (num_frames, 2048)
-                'video_id': video_id,
+                'video_id': f'{int(video_id):05d}',
                 'target': row['target'],
                 'num_frames': args.num_frames
             }, output_path)

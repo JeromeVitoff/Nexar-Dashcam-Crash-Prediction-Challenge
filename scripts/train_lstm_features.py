@@ -68,8 +68,8 @@ def main():
     print(f"   • Learning rate: {args.lr}")
     
     # Import ici pour éviter erreur si pas installé
-    from lstm_features import LSTMFeatureClassifier
-    from feature_dataset import get_feature_dataloaders
+    from src.models.lstm_features import LSTMFeatureClassifier
+    from src.data.feature_dataset import get_feature_dataloaders
     
     # Charger les données
     print(f"\n📥 Chargement des features...")

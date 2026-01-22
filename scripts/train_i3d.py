@@ -16,7 +16,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.models.i3d import I3D
 from src.data.video_dataset import VideoDataset
-from src.data.transforms import get_video_transforms
+from src.data.video_transforms import get_video_transforms
 from src.training.trainer import Trainer
 
 
@@ -156,7 +156,7 @@ def main():
         num_classes=2,
         pretrained=args.pretrained,
         dropout=args.dropout
-    )
+    ).to(device)
     
     # Count parameters
     total_params = sum(p.numel() for p in model.parameters())
@@ -190,32 +190,41 @@ def main():
             weight_decay=args.weight_decay
         )
     
-    # Scheduler
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer,
-        mode='max',
-        factor=0.5,
-        patience=3,
-        verbose=True
-    )
+    # Scheduler (not used - Trainer handles it internally)
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    #     optimizer,
+    #     mode='max',
+    #     factor=0.5,
+    #     patience=3
+    # )
     
     # Trainer
     print(f"\n⚙️  Création du Trainer...")
+    
+    # Create config dictionary (matches Trainer API signature)
+    config = {
+        'num_epochs': args.epochs,
+        'patience': 10,
+        'lr': args.lr,
+        'weight_decay': args.weight_decay,
+        'batch_size': args.batch_size,
+        'save_best_only': True
+    }
+    
     trainer = Trainer(
         model=model,
         train_loader=train_loader,
         val_loader=val_loader,
         criterion=criterion,
         optimizer=optimizer,
-        scheduler=scheduler,
         device=device,
-        save_dir=args.save_dir,
-        use_amp=True  # Mixed precision for memory efficiency
+        config=config,
+        save_dir=args.save_dir
     )
     
     print(f"✅ Trainer créé:")
     print(f"   • Save dir: {args.save_dir}")
-    print(f"   • Mixed precision: ON")
+    print(f"   • Device: {device}")
     
     # Train
     print(f"\n🎯 Début de l'entraînement...")
@@ -229,11 +238,12 @@ def main():
     
     print(f"\n📊 Résultats finaux:")
     print(f"   • Meilleure accuracy: {trainer.best_val_acc:.4f}")
-    print(f"   • Meilleure loss: {trainer.best_val_loss:.4f}")
     
-    best_metrics = trainer.get_best_metrics()
-    if 'best_val_ap' in best_metrics:
-        print(f"   • Meilleur AP: {best_metrics['best_val_ap']:.4f}")
+    # Check if best metrics are available
+    if hasattr(trainer, 'best_val_loss'):
+        print(f"   • Meilleure loss: {trainer.best_val_loss:.4f}")
+    if hasattr(trainer, 'best_metrics') and 'best_val_ap' in trainer.best_metrics:
+        print(f"   • Meilleur AP: {trainer.best_metrics['best_val_ap']:.4f}")
     
     print(f"\n📁 Résultats sauvegardés dans: {args.save_dir}")
     print(f"   • Meilleur modèle: {args.save_dir}/best_model.pth")

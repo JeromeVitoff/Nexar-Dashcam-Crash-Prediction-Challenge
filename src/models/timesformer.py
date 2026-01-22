@@ -1,245 +1,133 @@
 """
-TimeSformer (Hugging Face) pour Classification de Vidéos
-=========================================================
-
-Modèle Transformer pré-entraîné pour vidéos (Facebook AI).
-
-Source: "Is Space-Time Attention All You Need for Video Understanding?" (2021)
-Hugging Face: facebook/timesformer-base-finetuned-k400
-
-Architecture:
-    - Vision Transformer adapté pour vidéos
-    - Attention spatio-temporelle divisée
-    - Pré-entraîné sur Kinetics-400
-
-Auteur: Jerome
-Expérience: exp_005 (Transformer baseline)
+TimeSformer Model for Video Classification
+Vision Transformer with divided space-time attention
 """
 
 import torch
 import torch.nn as nn
-from transformers import TimesformerModel, TimesformerConfig
-from typing import Tuple, Dict
 
+class PatchEmbed(nn.Module):
+    """Split video into patches and embed them"""
+    def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768):
+        super().__init__()
+        self.img_size = img_size
+        self.patch_size = patch_size
+        self.num_patches = (img_size // patch_size) ** 2
+        self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
+    
+    def forward(self, x):
+        B, C, T, H, W = x.shape
+        x = x.permute(0, 2, 1, 3, 4)
+        x = x.reshape(B * T, C, H, W)
+        x = self.proj(x)
+        x = x.flatten(2)
+        x = x.transpose(1, 2)
+        x = x.reshape(B, T, self.num_patches, -1)
+        x = x.reshape(B, T * self.num_patches, -1)
+        return x
 
-class TimeSformerClassifier(nn.Module):
-    """
-    TimeSformer pour classification de collisions.
-    
-    Utilise un modèle pré-entraîné de Hugging Face et ajoute
-    une tête de classification custom.
-    
-    Args:
-        num_classes (int): Nombre de classes (2)
-        pretrained_model (str): Nom du modèle HF
-        freeze_backbone (bool): Freeze le transformer
-        dropout (float): Dropout pour le classifier
-        
-    Input Shape:
-        (batch, num_frames, 3, 224, 224)
-        
-    Output Shape:
-        (batch, num_classes)
-    """
-    
-    def __init__(
-        self,
-        num_classes: int = 2,
-        pretrained_model: str = "facebook/timesformer-base-finetuned-k400",
-        freeze_backbone: bool = False,
-        dropout: float = 0.3
-    ):
-        super(TimeSformerClassifier, self).__init__()
-        
-        self.num_classes = num_classes
-        self._is_backbone_frozen = freeze_backbone
-        
-        # Charger le modèle pré-entraîné
-        print(f"   📥 Chargement de {pretrained_model}...")
-        self.timesformer = TimesformerModel.from_pretrained(pretrained_model)
-        
-        # Dimension des features
-        self.hidden_size = self.timesformer.config.hidden_size  # 768
-        
-        # Freeze si demandé
-        if freeze_backbone:
-            for param in self.timesformer.parameters():
-                param.requires_grad = False
-            print("   🔒 Backbone freezé")
-        else:
-            print("   🔓 Backbone entraînable")
-        
-        # Classifier custom
-        self.classifier = nn.Sequential(
-            nn.LayerNorm(self.hidden_size),
-            nn.Dropout(dropout),
-            nn.Linear(self.hidden_size, self.hidden_size // 2),
+class TimeSformerBlock(nn.Module):
+    """Transformer block with divided space-time attention"""
+    def __init__(self, dim, num_heads, num_frames, num_patches, mlp_ratio=4., dropout=0.):
+        super().__init__()
+        self.num_frames = num_frames
+        self.num_patches = num_patches
+        self.norm1 = nn.LayerNorm(dim)
+        self.temporal_attn = nn.MultiheadAttention(dim, num_heads, dropout=dropout, batch_first=True)
+        self.norm2 = nn.LayerNorm(dim)
+        self.spatial_attn = nn.MultiheadAttention(dim, num_heads, dropout=dropout, batch_first=True)
+        self.norm3 = nn.LayerNorm(dim)
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        self.mlp = nn.Sequential(
+            nn.Linear(dim, mlp_hidden_dim),
             nn.GELU(),
             nn.Dropout(dropout),
-            nn.Linear(self.hidden_size // 2, num_classes)
+            nn.Linear(mlp_hidden_dim, dim),
+            nn.Dropout(dropout)
         )
-        
-        print(f"✅ TimeSformer initialisé:")
-        print(f"   • Model: {pretrained_model}")
-        print(f"   • Hidden size: {self.hidden_size}")
-        print(f"   • Dropout: {dropout}")
-        print(f"   • Num classes: {num_classes}")
     
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass.
-        
-        Args:
-            x: (batch, num_frames, 3, H, W)
-            
-        Returns:
-            logits: (batch, num_classes)
-        """
-        batch_size = x.shape[0]
-        
-        # TimeSformer attend (batch, num_frames, channels, H, W)
-        # C'est déjà le bon format !
-        
-        # Forward à travers TimeSformer
-        outputs = self.timesformer(x)
-        
-        # Prendre le [CLS] token
-        pooled_output = outputs.last_hidden_state[:, 0]  # (batch, hidden_size)
-        
-        # Classification
-        logits = self.classifier(pooled_output)
-        
+    def forward(self, x):
+        B = x.shape[0]
+        x_norm = self.norm1(x)
+        x_temporal = x_norm.reshape(B, self.num_frames, self.num_patches, -1)
+        x_temporal = x_temporal.permute(0, 2, 1, 3)
+        x_temporal = x_temporal.reshape(B * self.num_patches, self.num_frames, -1)
+        attn_out, _ = self.temporal_attn(x_temporal, x_temporal, x_temporal)
+        attn_out = attn_out.reshape(B, self.num_patches, self.num_frames, -1)
+        attn_out = attn_out.permute(0, 2, 1, 3)
+        attn_out = attn_out.reshape(B, self.num_frames * self.num_patches, -1)
+        x = x + attn_out
+        x_norm = self.norm2(x)
+        x_spatial = x_norm.reshape(B, self.num_frames, self.num_patches, -1)
+        x_spatial = x_spatial.reshape(B * self.num_frames, self.num_patches, -1)
+        attn_out, _ = self.spatial_attn(x_spatial, x_spatial, x_spatial)
+        attn_out = attn_out.reshape(B, self.num_frames, self.num_patches, -1)
+        attn_out = attn_out.reshape(B, self.num_frames * self.num_patches, -1)
+        x = x + attn_out
+        x = x + self.mlp(self.norm3(x))
+        return x
+
+class TimeSformer(nn.Module):
+    """TimeSformer for binary video classification"""
+    def __init__(self, img_size=224, patch_size=16, num_frames=8, num_classes=2,
+                 embed_dim=768, depth=12, num_heads=12, mlp_ratio=4., dropout=0.1):
+        super().__init__()
+        self.num_frames = num_frames
+        self.num_patches = (img_size // patch_size) ** 2
+        self.embed_dim = embed_dim
+        self.patch_embed = PatchEmbed(img_size, patch_size, 3, embed_dim)
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_frames * self.num_patches + 1, embed_dim))
+        self.pos_drop = nn.Dropout(p=dropout)
+        self.blocks = nn.ModuleList([
+            TimeSformerBlock(embed_dim, num_heads, num_frames, self.num_patches, mlp_ratio, dropout)
+            for _ in range(depth)
+        ])
+        self.norm = nn.LayerNorm(embed_dim)
+        self.head = nn.Sequential(
+            nn.Dropout(dropout),
+            nn.Linear(embed_dim, num_classes)
+        )
+        nn.init.trunc_normal_(self.pos_embed, std=0.02)
+        nn.init.trunc_normal_(self.cls_token, std=0.02)
+        self.apply(self._init_weights)
+    
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            nn.init.trunc_normal_(m.weight, std=0.02)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+    
+    def forward(self, x):
+        B = x.shape[0]
+        x = self.patch_embed(x)
+        cls_tokens = self.cls_token.expand(B, -1, -1)
+        x = torch.cat([cls_tokens, x], dim=1)
+        x = x + self.pos_embed
+        x = self.pos_drop(x)
+        cls_token = x[:, 0:1]
+        x_patches = x[:, 1:]
+        for block in self.blocks:
+            x_patches = block(x_patches)
+        x = torch.cat([cls_token, x_patches], dim=1)
+        x = self.norm(x)
+        cls_token = x[:, 0]
+        logits = self.head(cls_token)
         return logits
-    
-    def get_num_params(self) -> Tuple[int, int]:
-        total = sum(p.numel() for p in self.parameters())
-        trainable = sum(p.numel() for p in self.parameters() if p.requires_grad)
-        return total, trainable
-    
-    def freeze_backbone(self):
-        for param in self.timesformer.parameters():
-            param.requires_grad = False
-        self._is_backbone_frozen = True
-        print("🔒 Backbone freezé")
-    
-    def unfreeze_backbone(self):
-        for param in self.timesformer.parameters():
-            param.requires_grad = True
-        self._is_backbone_frozen = False
-        print("🔓 Backbone unfreezé")
-    
-    def unfreeze_last_n_layers(self, n: int = 2):
-        """Unfreeze les n dernières couches du transformer."""
-        self.freeze_backbone()
-        
-        # TimeSformer a 12 layers
-        total_layers = len(self.timesformer.encoder.layer)
-        start_idx = max(0, total_layers - n)
-        
-        for i in range(start_idx, total_layers):
-            for param in self.timesformer.encoder.layer[i].parameters():
-                param.requires_grad = True
-        
-        print(f"🔓 Dernières {n} couches unfreezées")
 
-
-def count_parameters(model: nn.Module) -> Dict[str, int]:
-    total = sum(p.numel() for p in model.parameters())
-    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    frozen = total - trainable
-    
-    return {
-        'total': total,
-        'trainable': trainable,
-        'frozen': frozen,
-        'trainable_percent': (trainable / total * 100) if total > 0 else 0
-    }
-
-
-def test_model():
-    """Test du modèle TimeSformer."""
-    print("🧪 TEST DU MODÈLE TimeSformer\n")
-    print("="*70)
-    
-    # 1. Créer le modèle
-    print("\n1️⃣ Création du modèle...")
-    model = TimeSformerClassifier(
-        num_classes=2,
-        pretrained_model="facebook/timesformer-base-finetuned-k400",
-        freeze_backbone=False,
-        dropout=0.3
+def get_timesformer(num_classes=2, num_frames=8, img_size=224, pretrained=False):
+    """Factory function to create TimeSformer model"""
+    model = TimeSformer(
+        img_size=img_size,
+        patch_size=16,
+        num_frames=num_frames,
+        num_classes=num_classes,
+        embed_dim=768,
+        depth=12,
+        num_heads=12,
+        dropout=0.1
     )
-    
-    # 2. Statistiques
-    print("\n2️⃣ Statistiques:")
-    params = count_parameters(model)
-    print(f"   • Total: {params['total']:,}")
-    print(f"   • Trainable: {params['trainable']:,}")
-    print(f"   • Frozen: {params['frozen']:,}")
-    
-    # 3. Test forward
-    print("\n3️⃣ Test forward pass...")
-    batch_size = 2
-    num_frames = 8  # TimeSformer peut prendre 8 frames
-    x = torch.randn(batch_size, num_frames, 3, 224, 224)
-    print(f"   • Input: {x.shape}")
-    
-    model.eval()
-    with torch.no_grad():
-        output = model(x)
-    
-    print(f"   • Output: {output.shape}")
-    print(f"   • Range: [{output.min():.3f}, {output.max():.3f}]")
-    
-    # 4. Test configurations
-    print("\n4️⃣ Test configurations...")
-    for nf in [8, 16]:
-        x = torch.randn(1, nf, 3, 224, 224)
-        with torch.no_grad():
-            out = model(x)
-        print(f"   ✓ {nf} frames: {out.shape}")
-    
-    # 5. GPU
-    print("\n5️⃣ Test GPU...")
-    device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
-    print(f"   • Device: {device}")
-    
-    try:
-        model = model.to(device)
-        x = torch.randn(1, 8, 3, 224, 224).to(device)
-        with torch.no_grad():
-            out = model(x)
-        print(f"   ✓ Forward sur {device}: OK")
-    except Exception as e:
-        print(f"   ❌ Erreur: {e}")
-    
-    # 6. Freeze/Unfreeze
-    print("\n6️⃣ Test freeze/unfreeze...")
-    p_before = count_parameters(model)['trainable']
-    print(f"   • Avant: {p_before:,}")
-    
-    model.freeze_backbone()
-    p_frozen = count_parameters(model)['trainable']
-    print(f"   • Après freeze: {p_frozen:,}")
-    
-    model.unfreeze_last_n_layers(2)
-    p_partial = count_parameters(model)['trainable']
-    print(f"   • Unfreeze 2 layers: {p_partial:,}")
-    
-    print("\n" + "="*70)
-    print("✅ TOUS LES TESTS RÉUSSIS!")
-    print("="*70)
-    
-    # Résumé
-    print("\n📊 RÉSUMÉ:")
-    print("-" * 70)
-    print(f"Architecture: TimeSformer (Vision Transformer)")
-    print(f"Paramètres: {params['total']:,}")
-    print(f"Source: facebook/timesformer-base-finetuned-k400")
-    print(f"Pré-entraîné: Kinetics-400")
-    print(f"Type: Transformer avec attention spatio-temporelle")
-    print("-" * 70)
-
-
-if __name__ == "__main__":
-    test_model()
+    return model
