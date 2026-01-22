@@ -251,108 +251,108 @@ colab_env/
 # LATEX / MEMOIR
 # ========================
 # LaTeX auxiliary files
-*.aux
-*.bbl
-*.blg
-*.fdb_latexmk
-*.fls
-*.lof
-*.lot
-*.out
-*.toc
-*.synctex.gz
-*.synctex(busy)
-*.log
-*.nav
-*.snm
-*.vrb
-*.xdv
-*.bcf
-*.run.xml
-*.gz(busy)
+# *.aux
+# *.bbl
+# *.blg
+# *.fdb_latexmk
+# *.fls
+# *.lof
+# *.lot
+# *.out
+# *.toc
+# *.synctex.gz
+# *.synctex(busy)
+# *.log
+# *.nav
+# *.snm
+# *.vrb
+# *.xdv
+# *.bcf
+# *.run.xml
+# *.gz(busy)
 
 # LaTeX temporary directories
-_minted-*/
-auto/
+# _minted-*/
+# auto/
 
-# BibTeX
-*.bib.bak
-*.bib.sav
+# # BibTeX
+# *.bib.bak
+# *.bib.sav
 
 # Biber
-*-blx.bib
+# *-blx.bib
 
 # TeXShop
-*.synctex.gz(busy)
+# *.synctex.gz(busy)
 
-# LyX
-*.lyx~
+# # LyX
+# *.lyx~
 
 # Kile
-*.kilepr
+# *.kilepr
 
 # Latexmk
-*.fdb_latexmk
+# *.fdb_latexmk
 
 # TeXworks
-*.synctex.gz
+# *.synctex.gz
 
 # TeXnicCenter
-*.tcp
-*.tps
+# *.tcp
+# *.tps
 
 # Makeindex
-*.idx
-*.ilg
-*.ind
+# *.idx
+# *.ilg
+# *.ind
 
 # Nomenclature
-*.nlo
-*.nls
+# *.nlo
+# *.nls
 
 # Glossaries
-*.acn
-*.acr
-*.glg
-*.glo
-*.gls
-*.glsdefs
-*.lzo
-*.lzs
+# *.acn
+# *.acr
+# *.glg
+# *.glo
+# *.gls
+# *.glsdefs
+# *.lzo
+# *.lzs
 
 # Gnuplot
-*.gnuplot
-*.table
+# *.gnuplot
+# *.table
 
 # Asymptote
-*.asy
+# *.asy
 
 # AMSTeX
-*.lox
+# *.lox
 
 # Minitoc
-*.maf
-*.mlf
-*.mlt
-*.mtc[0-9]*
-*.slf[0-9]*
-*.slt[0-9]*
-*.stc[0-9]*
+# *.maf
+# *.mlf
+# *.mlt
+# *.mtc[0-9]*
+# *.slf[0-9]*
+# *.slt[0-9]*
+# *.stc[0-9]*
 
 # ========================
 # LATEX OUTPUT - Keep final PDFs only
 # ========================
 # Ignore all PDFs except the final thesis
-*.pdf
-!manuscript.pdf
-!memoire.pdf
-!thesis.pdf
-!report.pdf
-!slides.pdf
+# *.pdf
+# !manuscript.pdf
+# !memoire.pdf
+# !thesis.pdf
+# !report.pdf
+# !slides.pdf
 
 # But allow figures PDFs (for thesis)
-!figures/*.pdf
-!figures/**/*.pdf
+# !figures/*.pdf
+# !figures/**/*.pdf
 
 # ========================
 # COMPETITION SPECIFIC (KAGGLE)
@@ -362,11 +362,11 @@ kaggle.json
 .kaggle/
 
 # Submission files (keep template, not actual submissions)
-submission_*.csv
-!sample_submission.csv
+# submission_*.csv
+# !sample_submission.csv
 
 # Kaggle notebooks downloads
-kaggle_notebooks/
+# kaggle_notebooks/
 
 # ========================
 # DOCUMENTATION
